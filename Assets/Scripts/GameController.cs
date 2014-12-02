@@ -8,13 +8,22 @@ public class Tile
 	public bool WalkAble = true ;
 }
 
+[System.Serializable]
+public class InputTile
+{
+	public Transform Prefab;
+	public Vector2 Offset;
+}
+
 //[ExecuteInEditMode()]
 public class GameController : MonoBehaviour
 {
 
-	public Transform prefab1;
-	public Transform prefab2;
-	public Transform tree;
+	public InputTile GroundTile1;
+	public InputTile GroundTile2;
+	public InputTile TreeTile1;
+	public InputTile TreeTile2;
+	public InputTile Townhall;
 	public int sizeX;
 	public int sizeY;
 	private Tile[,] tiles;
@@ -25,23 +34,29 @@ public class GameController : MonoBehaviour
 		tiles = new Tile[sizeX, sizeY];
 		for (var x=0; x<sizeX; x++) {
 			for (var y=0; y<sizeY; y++) {
-				var prefab = (x + y) % 2 == 0 ? prefab1 : prefab2;
+				var itile = (x + y) % 2 == 0 ? GroundTile1 : GroundTile2;
 				var tile = new Tile ();
-				tile.GroundSprite = Instantiate (prefab, transform.position 
-				                                 + new Vector3 (x, 0, y), Quaternion.Euler (45f, 45f, 0f)) as Transform;
+				tile.GroundSprite = Instantiate (itile.Prefab, transform.position 
+					+ new Vector3 (x, 0, y), Quaternion.Euler (45f, 45f, 0f)) as Transform;
 				tiles [x, y] = tile;
 			}
 		}
 
+		// create townhall
+		var thtile = tiles [sizeX / 2, sizeY / 2];
+		thtile.ObjectSprite = Instantiate (this.Townhall.Prefab, transform.position 
+			+ new Vector3 (sizeX / 2 + 1 + this.Townhall.Offset.x, 0, sizeY / 2 + 1 + this.Townhall.Offset.y),
+		                                   Quaternion.Euler (45f, 45f, 0f)) as Transform;
 
-		for (var i=0; i<100; i++) {
-			var x = Random.Range (0, sizeX);
-			var y = Random.Range (0, sizeY);
+
+		for (var i=0; i<80; i++) {
+			var x = Random.Range (0, sizeX / 3) * 3;
+			var y = Random.Range (0, sizeY / 3) * 3;
 			var tile = tiles [x, y];
-			if (tile.ObjectSprite == null) {
-				tile.ObjectSprite = Instantiate (tree, transform.position 
-					+ new Vector3 (x + 0.5f, // +1 for tree sprite, it scaled
-			               0, y + 0.5f), Quaternion.Euler (45f, 45f, 0f)) as Transform;
+			if (tile.ObjectSprite == null && (new Vector2 (x, y) - new Vector2 (sizeX / 2, sizeY / 2)).magnitude > 2) {
+				var itile = i % 2 == 0 ? TreeTile1 : TreeTile2;
+				tile.ObjectSprite = Instantiate (itile.Prefab, transform.position 
+					+ new Vector3 (x + 1 + itile.Offset.x, 0, y + 1 + itile.Offset.y), Quaternion.Euler (45f, 45f, 0f)) as Transform;
 			}
 		}
 
@@ -64,13 +79,13 @@ public class GameController : MonoBehaviour
 	{
 		var tile = this.tiles [x, y];
 		//if (tile.ObjectSprite == null) {
-			var sprite = tile.GroundSprite.GetComponent<SpriteRenderer> ();
-			if (!this.FadeSpriteCoroutine) {
+		var sprite = tile.GroundSprite.GetComponent<SpriteRenderer> ();
+		if (!this.FadeSpriteCoroutine) {
 			StartCoroutine (FadeSpriteColor (tile.GroundSprite.GetComponent<SpriteRenderer> ()));
 			//StartCoroutine (FadeSpriteColor (tile.ObjectSprite.GetComponent<SpriteRenderer> ()));
-			} else {
-				Debug.Log ("Cannot highlight tile, some other is in process");
-			}
+		} else {
+			Debug.Log ("Cannot highlight tile, some other is in process");
+		}
 	}
 
 	public IEnumerator FadeSpriteColor (SpriteRenderer sprite)

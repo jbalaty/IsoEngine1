@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 908b9073ae5e0aa459fd1ac51f60f235
+guid: 427b069569dceea4c9b485804a799e90
 TextureImporter:
   fileIDToRecycleName: {}
   serializedVersion: 2
@@ -34,7 +34,7 @@ TextureImporter:
   spriteMode: 1
   spriteExtrude: 1
   spriteMeshType: 1
-  alignment: 0
+  alignment: 7
   spritePivot: {x: .5, y: .5}
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spritePixelsToUnits: 200
