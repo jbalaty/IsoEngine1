@@ -28,7 +28,7 @@ public class GameController : MonoBehaviour
 				var prefab = (x + y) % 2 == 0 ? prefab1 : prefab2;
 				var tile = new Tile ();
 				tile.GroundSprite = Instantiate (prefab, transform.position 
-				                                 + new Vector3 (x + 0.5f, 0, y + 0.5f), Quaternion.Euler (45f, 45f, 0f)) as Transform;
+				                                 + new Vector3 (x, 0, y), Quaternion.Euler (45f, 45f, 0f)) as Transform;
 				tiles [x, y] = tile;
 			}
 		}
