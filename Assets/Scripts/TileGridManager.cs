@@ -79,7 +79,12 @@ public class TileGridManager
 	{
 		return this.tiles [(int)coords.x, (int)coords.y];
 	}
-
+	public Tile SetupTile(Vector2 coords, ETileSprite etsprite, Transform prefab, Vector2 size, Vector2 offset){
+		var tile = GetTile (coords);
+		var sprite = InstantiatePrefab (prefab, new Vector3 (coords.x  + offset.x, 0, coords.y +offset.y));
+		AllocateMultiTileObject (coords, etsprite, sprite, size);
+		return tile;
+	}
 	public void ForEach (System.Action<Vector2,Tile> callback)
 	{
 		for (var x=0; x<this.sizeX; x++) {
@@ -100,7 +105,7 @@ public class TileGridManager
 		mainTile.ObjectSprite0 = sprite;
 		for(var x=0;x<size.x;x++){
 			for(var y=0;y<size.y;y++){
-				var tile = GetTile(new Vector2(x,y));
+				var tile = GetTile(coords + new Vector2(x,y));
 				tile.ObjectTile0Reference = mainTile;
 			}
 		}
@@ -115,11 +120,15 @@ public class TileGridManager
 	{
 		if(CheckBounds(coords)){
 			var tile = this.GetTile(coords);
-			return tile.ObjectSprite0 == null && tile.ObjectSprite1 == null
-				&& tile.ObjectTile0Reference == null && tile.ObjectTile1Reference==null;
+			return IsTileWalkable(tile);
 		} else {
 			return false;
 		}
+	}
+
+	bool IsTileWalkable(Tile tile){
+		return tile.ObjectSprite0 == null && tile.ObjectSprite1 == null
+			&& tile.ObjectTile0Reference == null && tile.ObjectTile1Reference==null;
 	}
 
 	public bool CheckBounds(Vector2 coords){
@@ -129,5 +138,19 @@ public class TileGridManager
 		} else {
 			return false;
 		}
+	}
+
+	public void DebugHighlightNotWalkableTiles(bool highlight){
+		this.ForEach((v,tile)=>{
+			if(!IsTileWalkable(tile)){
+				foreach(var sprite in tile.sprites){
+					if(sprite!=null){
+						var color = sprite.GetComponent<SpriteRenderer>().color;
+						color.a=0.5f;
+						sprite.GetComponent<SpriteRenderer>().color = color;
+					}
+				}
+			}
+		});
 	}
 }

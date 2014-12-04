@@ -10,6 +10,8 @@ namespace IsoEngine1
 		public Vector3 direction;
 		public GameController gameController;
 		public TileGridManager tilesGrid;
+		public Vector2? TargetTilePosition;
+		public Vector2? NextTilePosition;
 
 		// Use this for initialization
 		void Start ()
@@ -19,18 +21,43 @@ namespace IsoEngine1
 		// Update is called once per frame
 		void FixedUpdate ()
 		{
-			var newPosition = transform.position + direction * speed * Time.deltaTime;
-			if (gameController.tilesGrid.GetIsWalkable (new Vector2 (newPosition.x, newPosition.z))) {
-				//transform.Translate (newPosition);
-				transform.position = newPosition;
-			} else {
-				// rotate and try again
-				if (Random.value <= 0.5f) {
-					direction = new Vector3 (direction.z, direction.y, -direction.x);
+			// if NextTile move to this tile
+			// if we are on NextTile but not on TargetTile
+			// 
+			if(TargetTilePosition != null && TargetTilePosition != GetTilePositionVector()){
+				var dir = TargetTilePosition.Value - GetTilePositionVector();
+				if(Mathf.Abs(dir.x)>Mathf.Abs(dir.y)) dir.y=0f;
+				else dir.x = 0f;
+				direction = new Vector3(dir.x,0f,dir.y).normalized;
+				// actual position + 0.5 to center the position to actual tile + half of direction vector
+				// this is needed for the algorithm to work in every direction
+				var newPosition = transform.position + new Vector3 (0.5f, 0f, 0.5f) + direction/2f;
+				if (gameController.tilesGrid.GetIsWalkable (new Vector2 (newPosition.x, newPosition.z))) {
+					//transform.Translate (newPosition);
+					transform.Translate (direction * speed * Time.deltaTime);
+					var diff = (TargetTilePosition.Value - GetTilePositionVector());
+					if(diff.magnitude<= 0.1){
+						transform.position = new Vector3(TargetTilePosition.Value.x,0f,TargetTilePosition.Value.y);
+						TargetTilePosition = null;
+						NextTilePosition = null;
+					}
 				} else {
-					direction = new Vector3 (-direction.z, direction.y, direction.x);
+					// rotate and try again
+					if (Random.value <= 0.5f) {
+						direction = new Vector3 (direction.z, direction.y, -direction.x);
+					} else {
+						direction = new Vector3 (-direction.z, direction.y, direction.x);
+					}
+						
 				}
+			} else {
+				TargetTilePosition = null;
+				NextTilePosition = null;
 			}
+		}
+
+		public Vector2 GetTilePositionVector(){
+			return new Vector2(transform.position.x, transform.position.z);
 		}
 	}
 }

@@ -6,7 +6,7 @@ public class InputTile
 {
 	public Transform Prefab;
 	public Vector2 Offset;
-	public Vector2 Size = new Vector2(1,1);
+	public Vector2 Size = new Vector2 (1, 1);
 }
 
 //[ExecuteInEditMode()]
@@ -20,6 +20,7 @@ public class GameController : MonoBehaviour
 	public InputTile TreeTile2;
 	public InputTile Townhall;
 	public TileGridManager tilesGrid;
+	public IsoEngine1.CharacterController CharacterController;
 	private bool FadeSpriteCoroutine;
 	// Use this for initialization
 	void Start ()
@@ -32,20 +33,16 @@ public class GameController : MonoBehaviour
 
 		// create townhall
 		var mapCenter = new Vector2 (sizeX / 2, sizeY / 2);
-		var thtile = tilesGrid.GetTile (mapCenter);
-		var prefab = tilesGrid.InstantiatePrefab (this.Townhall.Prefab, transform.position + 
-			new Vector3 (sizeX / 2 + 1 + this.Townhall.Offset.x, 0, sizeY / 2 + 1 + this.Townhall.Offset.y));
-		tilesGrid.AllocateMultiTileObject (mapCenter, ETileSprite.ObjectSprite0, prefab, this.Townhall.Size);
+		tilesGrid.SetupTile (mapCenter, ETileSprite.ObjectSprite0, Townhall.Prefab, Townhall.Size, Townhall.Offset);
 
 
 		for (var i=0; i<80; i++) {
-			var x = Random.Range (0, sizeX / 3) * 3;
-			var y = Random.Range (0, sizeY / 3) * 3;
+			var x = Random.Range (0, (sizeX - 1) / 3) * 3;
+			var y = Random.Range (0, (sizeY - 1) / 3) * 3;
 			var tile = tilesGrid.GetTile (new Vector2 (x, y));
-			if (tile.ObjectSprite0 == null && (new Vector2 (x, y) - new Vector2 (sizeX / 2, sizeY / 2)).magnitude > 2) {
+			if (tile.ObjectSprite0 == null && (new Vector2 (x, y) - new Vector2 (sizeX / 2, sizeY / 2)).magnitude > 4) {
 				var itile = i % 2 == 0 ? TreeTile1 : TreeTile2;
-				tile.ObjectSprite0 = tilesGrid.InstantiatePrefab (itile.Prefab, transform.position 
-					+ new Vector3 (x + 1 + itile.Offset.x, 0, y + 1 + itile.Offset.y));
+				tilesGrid.SetupTile (new Vector2 (x, y), ETileSprite.ObjectSprite0, itile.Prefab, itile.Size, itile.Offset);
 			}
 		}
 	}
@@ -68,6 +65,8 @@ public class GameController : MonoBehaviour
 //		} else {
 //			Debug.Log ("Cannot highlight tile, some other is in process");
 //		}
+		this.tilesGrid.DebugHighlightNotWalkableTiles (true);
+		CharacterController.TargetTilePosition = new Vector2(x,y);
 	}
 
 	public IEnumerator FadeSpriteColor (SpriteRenderer sprite)
