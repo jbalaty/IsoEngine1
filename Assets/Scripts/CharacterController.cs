@@ -11,8 +11,7 @@ namespace IsoEngine1
 		public GameController gameController;
 		public TileGridManager tilesGrid;
 		public Vector2? TargetTilePosition;
-		public Vector2? NextTilePosition;
-
+		bool IsMoving = false;
 		// Use this for initialization
 		void Start ()
 		{
@@ -23,41 +22,77 @@ namespace IsoEngine1
 		{
 			// if NextTile move to this tile
 			// if we are on NextTile but not on TargetTile
-			// 
-			if(TargetTilePosition != null && TargetTilePosition != GetTilePositionVector()){
-				var dir = TargetTilePosition.Value - GetTilePositionVector();
-				if(Mathf.Abs(dir.x)>Mathf.Abs(dir.y)) dir.y=0f;
-				else dir.x = 0f;
-				direction = new Vector3(dir.x,0f,dir.y).normalized;
+
+			if (this.IsMoving)
+				return;
+
+			if (TargetTilePosition != null && TargetTilePosition != GetTilePositionVector ()) {
+				var dir = TargetTilePosition.Value - GetTilePositionVector ();
+				if (Mathf.Abs (dir.x) > Mathf.Abs (dir.y))
+					dir.y = 0f;
+				else
+					dir.x = 0f;
+				direction = new Vector3 (dir.x, 0f, dir.y).normalized;
 				// actual position + 0.5 to center the position to actual tile + half of direction vector
 				// this is needed for the algorithm to work in every direction
-				var newPosition = transform.position + new Vector3 (0.5f, 0f, 0.5f) + direction/2f;
-				if (gameController.tilesGrid.GetIsWalkable (new Vector2 (newPosition.x, newPosition.z))) {
-					//transform.Translate (newPosition);
-					transform.Translate (direction * speed * Time.deltaTime);
-					var diff = (TargetTilePosition.Value - GetTilePositionVector());
-					if(diff.magnitude<= 0.1){
-						transform.position = new Vector3(TargetTilePosition.Value.x,0f,TargetTilePosition.Value.y);
-						TargetTilePosition = null;
-						NextTilePosition = null;
-					}
+				var newPosition = transform.position + new Vector3 (0.5f, 0f, 0.5f) + direction;
+				var nextposition = new Vector3 ((int)newPosition.x, 0f, (int)newPosition.z);
+				if (gameController.tilesGrid.GetIsWalkable (new Vector2 (nextposition.x, nextposition.z))) {
+					// start movement to next tile
+					Debug.Log ("Moving to next position " + nextposition);
+					StartCoroutine (MoveToPosition (nextposition));
 				} else {
-					// rotate and try again
-					if (Random.value <= 0.5f) {
-						direction = new Vector3 (direction.z, direction.y, -direction.x);
-					} else {
-						direction = new Vector3 (-direction.z, direction.y, direction.x);
-					}
-						
+					// try to find some other way
+					StartCoroutine (JumpJump(.5f));
+					TargetTilePosition = null;
 				}
 			} else {
 				TargetTilePosition = null;
-				NextTilePosition = null;
 			}
 		}
 
-		public Vector2 GetTilePositionVector(){
-			return new Vector2(transform.position.x, transform.position.z);
+		public IEnumerator MoveToPosition (Vector3 nexttcoords)
+		{
+			this.IsMoving = true;
+			var diff = (nexttcoords - transform.position);
+			while (diff.magnitude>.1f) {
+				transform.Translate (diff.normalized * speed * Time.deltaTime);
+				diff = (nexttcoords - transform.position);
+				yield return  null;
+			}
+			transform.position = nexttcoords;
+			this.IsMoving = false;
+		}
+
+		public IEnumerator JumpJump (float height)
+		{
+			this.IsMoving = true;
+			while (transform.position.y<height) {
+				transform.Translate (0f,speed * Time.deltaTime,0f);
+				yield return  null;
+			}
+			while (transform.position.y>0f) {
+				transform.Translate (0f,-speed * Time.deltaTime,0f);
+				yield return  null;
+			}
+//			yield return new WaitForSeconds (.05f);
+			while (transform.position.y<height) {
+				transform.Translate (0f,speed * Time.deltaTime,0f);
+				yield return  null;
+			}
+			while (transform.position.y>0f) {
+				transform.Translate (0f,-speed * Time.deltaTime,0f);
+				yield return  null;
+			}
+			var p = transform.position;
+			p.y = 0f;
+			transform.position = p;
+			this.IsMoving = false;
+		}
+
+		public Vector2 GetTilePositionVector ()
+		{
+			return new Vector2 (transform.position.x, transform.position.z);
 		}
 	}
 }

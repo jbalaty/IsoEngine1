@@ -66,7 +66,8 @@ public class GameController : MonoBehaviour
 //			Debug.Log ("Cannot highlight tile, some other is in process");
 //		}
 		this.tilesGrid.DebugHighlightNotWalkableTiles (true);
-		CharacterController.TargetTilePosition = new Vector2(x,y);
+		Debug.Log ("Setting targettile to " + new Vector2 (x, y));
+		CharacterController.TargetTilePosition = new Vector2 (x, y);
 	}
 
 	public IEnumerator FadeSpriteColor (SpriteRenderer sprite)
