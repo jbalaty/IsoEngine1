@@ -48,7 +48,7 @@ public class CameraController : MonoBehaviour
 				if (Physics.Raycast (ray, out hit, 100f)) {
 					int x = Mathf.FloorToInt (hit.point.x);
 					int y = Mathf.FloorToInt (hit.point.z);
-					Debug.Log ("Hit at coords" + hit.point + "(" + x + "," + y + ")");
+//					Debug.Log ("Hit at coords" + hit.point + "(" + x + "," + y + ")");
 					
 					GameController.HighlightTile (x, y);
 				}

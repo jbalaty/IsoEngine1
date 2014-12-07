@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public enum ETileSprite
 {
@@ -77,14 +78,14 @@ public struct Vector2Int
 		return new Vector2Int (lhs.x - rhs.x, lhs.y - rhs.y);
 	}
 
-	public float magnitude{
+	public float magnitude {
 		get {
 			return this.Vector2.magnitude;
 		}
 	}
 
 	public Vector2 normalized {
-		get{
+		get {
 			return this.Vector2.normalized;
 		}
 	}
@@ -102,9 +103,31 @@ public struct Vector2Int
 			return new Vector3 (this.x, this.y, 0f);
 		} else if (evc == EVectorComponents.XZ) {
 			return new Vector3 (this.x, 0f, this.y);
-		} else throw new UnityException ("Cannot convert to Vector3 according to components specification " + evc);
+		} else
+			throw new UnityException ("Cannot convert to Vector3 according to components specification " + evc);
 	}
 };
+
+public class Path : LinkedList<Vector2Int>
+{
+	public Vector2Int PopFirst(){
+		var r = First.Value;
+		this.RemoveFirst();
+		return r;
+	}
+	
+	public bool IsEmpty(){
+		return this.Count == 0;
+	}
+}
+
+public interface IPathfidningAdapter {
+	void Init(Vector2Int size);
+	void SetTile(Vector2Int position, Tile tile);
+	Path FindPath(Vector2Int start, Vector2Int end);
+}
+
+
 
 [System.Serializable]
 public class Tile
@@ -149,13 +172,16 @@ public class Tile
 [System.Serializable]
 public class TileGridManager
 {
-
 	public int sizeX = 0;
 	public int sizeY = 0;
 	public Tile[,] tiles;
+	public AStarPathfinding PathFinding;
+
+//	public event ChangeGridHandler ChangeHandler;
 
 	public TileGridManager (Vector2Int size)
 	{
+		Debug.Log("TileGridManager constructor");
 		this.sizeX = (int)size.x;
 		this.sizeY = (int)size.y;
 		this.tiles = new Tile[this.sizeX, this.sizeY];
@@ -172,6 +198,12 @@ public class TileGridManager
 		quad.transform.Rotate (new Vector3 (90, 0, 0));
 		quad.transform.localScale = new Vector3 (this.sizeX, this.sizeY, 0f);
 		quad.GetComponent<MeshRenderer> ().enabled = false;
+
+		PathFinding = new AStarPathfinding();
+		PathFinding.Init(size);
+//		this.ForEach((vec,tile)=> {
+//			PathFinding.SetTile(vec,tile);
+//		});
 	}
 
 	public Tile GetTile (Vector2Int coords)
@@ -208,8 +240,10 @@ public class TileGridManager
 		mainTile.ObjectSprite0 = sprite;
 		for (var x=0; x<size.x; x++) {
 			for (var y=0; y<size.y; y++) {
-				var tile = GetTile (coords + new Vector2Int (x, y));
+                var currcoods = coords + new Vector2Int(x, y);
+				var tile = GetTile (currcoods);
 				tile.ObjectTile0Reference = mainTile;
+                PathFinding.SetTile(currcoods, tile);
 			}
 		}
 	}
@@ -223,13 +257,13 @@ public class TileGridManager
 	{
 		if (CheckBounds (coords)) {
 			var tile = this.GetTile (coords);
-			return IsTileWalkable (tile);
+			return TileGridManager.IsTileWalkable (tile);
 		} else {
 			return false;
 		}
 	}
 
-	bool IsTileWalkable (Tile tile)
+	public static bool IsTileWalkable (Tile tile)
 	{
 		return tile.ObjectSprite0 == null && tile.ObjectSprite1 == null
 			&& tile.ObjectTile0Reference == null && tile.ObjectTile1Reference == null;
@@ -245,18 +279,27 @@ public class TileGridManager
 		}
 	}
 
+	public Path FindPath (Vector2Int start, Vector2Int end)
+	{
+
+		return PathFinding.FindPath(start, end);
+	}
+
+	#region DEBUG FUNCTIONS
 	public void DebugHighlightNotWalkableTiles (bool highlight)
 	{
-		this.ForEach ((v,tile) => {
-			if (!IsTileWalkable (tile)) {
-				foreach (var sprite in tile.sprites) {
-					if (sprite != null) {
-						var color = sprite.GetComponent<SpriteRenderer> ().color;
-						color.a = 0.5f;
-						sprite.GetComponent<SpriteRenderer> ().color = color;
-					}
-				}
-			}
-		});
+        PathFinding.DebugHighlightNotWalkableTiles(this, highlight);
+//		this.ForEach ((v,tile) => {
+//			if (!IsTileWalkable (tile)) {
+//				foreach (var sprite in tile.sprites) {
+//					if (sprite != null) {
+//						var color = sprite.GetComponent<SpriteRenderer> ().color;
+//						color.a = 0.5f;
+//						sprite.GetComponent<SpriteRenderer> ().color = color;
+//					}
+//				}
+//			}
+//		});
 	}
+	#endregion
 }

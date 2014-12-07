@@ -22,20 +22,20 @@ public class GameController : MonoBehaviour
 	public TileGridManager tilesGrid;
 	public IsoEngine1.CharacterController CharacterController;
 	private bool FadeSpriteCoroutine;
-	// Use this for initialization
-	void Start ()
-	{
+
+	void Awake(){
+		Debug.Log("GameController awake");
 		tilesGrid = new TileGridManager (new Vector2Int (sizeX, sizeY));
 		tilesGrid.ForEach ((v,tile) => {
 			var itile = (v.x + v.y) % 2 == 0 ? GroundTile1 : GroundTile2;
 			tile.GroundSprite0 = tilesGrid.InstantiatePrefab (itile.Prefab, transform.position + new Vector3 (v.x, 0, v.y));
 		});
-
+		
 		// create townhall
 		var mapCenter = new Vector2Int (sizeX / 2, sizeY / 2);
 		tilesGrid.SetupTile (mapCenter, ETileSprite.ObjectSprite0, Townhall.Prefab, new Vector2Int(Townhall.Size), Townhall.Offset);
-
-
+		
+		
 		for (var i=0; i<80; i++) {
 			var x = Random.Range (0, (sizeX - 1) / 3) * 3;
 			var y = Random.Range (0, (sizeY - 1) / 3) * 3;
@@ -45,6 +45,12 @@ public class GameController : MonoBehaviour
 				tilesGrid.SetupTile (new Vector2Int (x, y), ETileSprite.ObjectSprite0, itile.Prefab, new Vector2Int(itile.Size), itile.Offset);
 			}
 		}
+	}
+	// Use this for initialization
+	void Start ()
+	{
+		Debug.Log("GameController start");
+
 	}
 	
 	// Update is called once per frame
@@ -66,7 +72,7 @@ public class GameController : MonoBehaviour
 //			Debug.Log ("Cannot highlight tile, some other is in process");
 //		}
 		this.tilesGrid.DebugHighlightNotWalkableTiles (true);
-		CharacterController.TargetTilePosition = new Vector2Int(x,y);
+		CharacterController.SetTargetTile(new Vector2Int(x,y));
 	}
 
 	public IEnumerator FadeSpriteColor (SpriteRenderer sprite)
