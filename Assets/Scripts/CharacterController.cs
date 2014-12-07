@@ -10,8 +10,8 @@ namespace IsoEngine1
 		public Vector3 direction;
 		public GameController gameController;
 		public TileGridManager tilesGrid;
-		public Vector2? TargetTilePosition;
-		public Vector2? NextTilePosition;
+		public Vector2Int? TargetTilePosition;
+		public Vector2Int? NextTilePosition;
 
 		// Use this for initialization
 		void Start ()
@@ -24,18 +24,20 @@ namespace IsoEngine1
 			// if NextTile move to this tile
 			// if we are on NextTile but not on TargetTile
 			// 
-			if(TargetTilePosition != null && TargetTilePosition != GetTilePositionVector()){
-				var dir = TargetTilePosition.Value - GetTilePositionVector();
+			if(TargetTilePosition != null && TargetTilePosition != new Vector2Int(GetTilePositionVector())){
+
+				var dir = TargetTilePosition.Value.Vector2 - GetTilePositionVector();
 				if(Mathf.Abs(dir.x)>Mathf.Abs(dir.y)) dir.y=0f;
 				else dir.x = 0f;
+
 				direction = new Vector3(dir.x,0f,dir.y).normalized;
 				// actual position + 0.5 to center the position to actual tile + half of direction vector
 				// this is needed for the algorithm to work in every direction
 				var newPosition = transform.position + new Vector3 (0.5f, 0f, 0.5f) + direction/2f;
-				if (gameController.tilesGrid.GetIsWalkable (new Vector2 (newPosition.x, newPosition.z))) {
+				if (gameController.tilesGrid.GetIsWalkable (new Vector2Int (newPosition,EVectorComponents.XZ))) {
 					//transform.Translate (newPosition);
 					transform.Translate (direction * speed * Time.deltaTime);
-					var diff = (TargetTilePosition.Value - GetTilePositionVector());
+					var diff = (TargetTilePosition.Value.Vector2 - GetTilePositionVector());
 					if(diff.magnitude<= 0.1){
 						transform.position = new Vector3(TargetTilePosition.Value.x,0f,TargetTilePosition.Value.y);
 						TargetTilePosition = null;

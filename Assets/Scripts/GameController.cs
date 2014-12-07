@@ -25,24 +25,24 @@ public class GameController : MonoBehaviour
 	// Use this for initialization
 	void Start ()
 	{
-		tilesGrid = new TileGridManager (new Vector2 (sizeX, sizeY));
+		tilesGrid = new TileGridManager (new Vector2Int (sizeX, sizeY));
 		tilesGrid.ForEach ((v,tile) => {
 			var itile = (v.x + v.y) % 2 == 0 ? GroundTile1 : GroundTile2;
 			tile.GroundSprite0 = tilesGrid.InstantiatePrefab (itile.Prefab, transform.position + new Vector3 (v.x, 0, v.y));
 		});
 
 		// create townhall
-		var mapCenter = new Vector2 (sizeX / 2, sizeY / 2);
-		tilesGrid.SetupTile (mapCenter, ETileSprite.ObjectSprite0, Townhall.Prefab, Townhall.Size, Townhall.Offset);
+		var mapCenter = new Vector2Int (sizeX / 2, sizeY / 2);
+		tilesGrid.SetupTile (mapCenter, ETileSprite.ObjectSprite0, Townhall.Prefab, new Vector2Int(Townhall.Size), Townhall.Offset);
 
 
 		for (var i=0; i<80; i++) {
 			var x = Random.Range (0, (sizeX - 1) / 3) * 3;
 			var y = Random.Range (0, (sizeY - 1) / 3) * 3;
-			var tile = tilesGrid.GetTile (new Vector2 (x, y));
+			var tile = tilesGrid.GetTile (new Vector2Int (x, y));
 			if (tile.ObjectSprite0 == null && (new Vector2 (x, y) - new Vector2 (sizeX / 2, sizeY / 2)).magnitude > 4) {
 				var itile = i % 2 == 0 ? TreeTile1 : TreeTile2;
-				tilesGrid.SetupTile (new Vector2 (x, y), ETileSprite.ObjectSprite0, itile.Prefab, itile.Size, itile.Offset);
+				tilesGrid.SetupTile (new Vector2Int (x, y), ETileSprite.ObjectSprite0, itile.Prefab, new Vector2Int(itile.Size), itile.Offset);
 			}
 		}
 	}
@@ -66,7 +66,7 @@ public class GameController : MonoBehaviour
 //			Debug.Log ("Cannot highlight tile, some other is in process");
 //		}
 		this.tilesGrid.DebugHighlightNotWalkableTiles (true);
-		CharacterController.TargetTilePosition = new Vector2(x,y);
+		CharacterController.TargetTilePosition = new Vector2Int(x,y);
 	}
 
 	public IEnumerator FadeSpriteColor (SpriteRenderer sprite)
