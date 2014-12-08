@@ -37,11 +37,13 @@ namespace IsoEngine1
 				} else {
 					// follow the path, but check everytime if the tile is really empty
 					var nextposition = currentPath.PopFirst ();
-					var prev = nextposition;
+                    // DEBUG CODE
+                    var prev = nextposition;
 					foreach(var n in currentPath){
-						Debug.DrawLine(prev.Vector3(EVectorComponents.XZ),n.Vector3(EVectorComponents.XZ),Color.yellow,0.2f);
+                        Debug.DrawLine(prev.Vector3(EVectorComponents.XZ) + new Vector3(.5f, 0f, .5f), n.Vector3(EVectorComponents.XZ) + new Vector3(.5f, 0f, .5f), Color.yellow, 0.2f);
 						prev = n;
 					} 
+                    // DEBUG END
 					if (currentPath != null && gameController.tilesGrid.GetIsWalkable (nextposition)) {
 						//start movement to next tile
 //						Debug.Log ("Moving to next position " + nextposition);

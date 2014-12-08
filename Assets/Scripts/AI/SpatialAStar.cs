@@ -157,7 +157,6 @@ namespace SettlersEngine
 			PathNode[] neighborNodes = new PathNode[4];
 
 			//FOR DIAGONAL
-
 			//PathNode[] neighborNodes = new PathNode[8];
 			
 			m_ClosedSet.Clear();
@@ -291,15 +290,11 @@ namespace SettlersEngine
 
 
 			//DIAGONAL
-
-			/*if ((x > 0) && (y > 0))
-				inNeighbors[0] = m_SearchSpace[x - 1, y - 1];
-			else
-				inNeighbors[0] = null;
-
-			*/
-
-			
+			//if ((x > 0) && (y > 0))
+			//	inNeighbors[0] = m_SearchSpace[x - 1, y - 1];
+			//else
+			//	inNeighbors[0] = null;
+            // DIAGONAL END
 			
 			if (x > 0)
 				inNeighbors[0] = m_SearchSpace[x - 1, y];

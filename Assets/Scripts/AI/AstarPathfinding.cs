@@ -10,7 +10,7 @@ public class AStarPathfinding : IPathfidningAdapter
     {
         protected override Double Heuristic(PathNode inStart, PathNode inEnd)
         {
-            int formula = GameManager.distance;
+            int formula = 2;
             int dx = Math.Abs(inStart.X - inEnd.X);
             int dy = Math.Abs(inStart.Y - inEnd.Y);
 
@@ -75,9 +75,12 @@ public class AStarPathfinding : IPathfidningAdapter
     {
         var path = aStar.Search(start.Vector2, end.Vector2, null);
         var result = new Path();
-        foreach (var node in path)
+        if (path != null)
         {
-            result.AddLast(new Vector2Int(node.X, node.Y));
+            foreach (var node in path)
+            {
+                result.AddLast(new Vector2Int(node.X, node.Y));
+            }
         }
         return result;
     }

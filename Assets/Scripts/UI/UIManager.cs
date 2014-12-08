@@ -5,7 +5,8 @@ using UnityEngine.UI;
 public class UIManager : MonoBehaviour
 {
 
-	public GameObject ShopPanel;
+	public GameObject dlg_shop;
+    public GameObject dlg_buildings;
 	
 
 	// Use this for initialization
@@ -22,13 +23,20 @@ public class UIManager : MonoBehaviour
 
 	public void ShowShopPanel ()
 	{
-//		var active = ShopPanel.activeInHierarchy;
-		ShopPanel.SetActive (true);
+		dlg_shop.SetActive (true);
 	}
 
 	public void HideShopPanel ()
 	{
-//		var active = ShopPanel.activeInHierarchy;
-		ShopPanel.SetActive (false);
+		dlg_shop.SetActive (false);
+        dlg_buildings.SetActive(false);
 	}
+
+    public bool IsShopPanelVisible
+    {
+        get
+        {
+            return dlg_shop.activeInHierarchy;
+        }
+    }
 }
