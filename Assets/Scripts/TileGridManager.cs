@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using Extensions;
 
 public enum ETileSprite
 {
@@ -8,133 +10,6 @@ public enum ETileSprite
     GroundSprite1,
     ObjectSprite0,
     ObjectSprite1,
-}
-
-public enum EVectorComponents
-{
-    X,
-    Y,
-    Z,
-    XY,
-    XZ
-}
-
-public struct Vector2Int
-{
-    public int x;
-    public int y;
-
-    public Vector2Int(int x, int y)
-    {
-        this.x = x;
-        this.y = y;
-    }
-
-    public Vector2Int(Vector2 v)
-    {
-        this.x = (int)v.x;
-        this.y = (int)v.y;
-    }
-
-    public Vector2Int(Vector3 v, EVectorComponents evc)
-    {
-        if (evc == EVectorComponents.XY)
-        {
-            this.x = (int)v.x;
-            this.y = (int)v.y;
-        }
-        else if (evc == EVectorComponents.XZ)
-        {
-            this.x = (int)v.x;
-            this.y = (int)v.z;
-        }
-        else
-            throw new UnityException("Cannot convert Vector3 to Vector2 according to components specification " + evc);
-    }
-
-    public override bool Equals(object obj)
-    {
-        return base.Equals(obj);
-    }
-
-    public override int GetHashCode()
-    {
-        return base.GetHashCode();
-    }
-
-    public static bool operator ==(Vector2Int lhs, Vector2Int rhs)
-    {
-        return lhs.x == rhs.x && lhs.y == rhs.y;
-    }
-
-    public static bool operator !=(Vector2Int lhs, Vector2Int rhs)
-    {
-        return lhs.x != rhs.x || lhs.y != rhs.y;
-    }
-
-    public static Vector2Int operator +(Vector2Int lhs, Vector2Int rhs)
-    {
-        return new Vector2Int(lhs.x + rhs.x, lhs.y + rhs.y);
-    }
-
-    public static Vector2Int operator -(Vector2Int lhs, Vector2Int rhs)
-    {
-        return new Vector2Int(lhs.x - rhs.x, lhs.y - rhs.y);
-    }
-
-    public float magnitude
-    {
-        get
-        {
-            return this.Vector2.magnitude;
-        }
-    }
-
-    public Vector2 normalized
-    {
-        get
-        {
-            return this.Vector2.normalized;
-        }
-    }
-
-    public Vector2 Vector2
-    {
-        get
-        {
-            return new Vector2(this.x, this.y);
-
-        }
-    }
-
-    public Vector3 Vector3(EVectorComponents evc)
-    {
-        if (evc == EVectorComponents.XY)
-        {
-            return new Vector3(this.x, this.y, 0f);
-        }
-        else if (evc == EVectorComponents.XZ)
-        {
-            return new Vector3(this.x, 0f, this.y);
-        }
-        else
-            throw new UnityException("Cannot convert to Vector3 according to components specification " + evc);
-    }
-};
-
-public class Path : LinkedList<Vector2Int>
-{
-    public Vector2Int PopFirst()
-    {
-        var r = First.Value;
-        this.RemoveFirst();
-        return r;
-    }
-
-    public bool IsEmpty()
-    {
-        return this.Count == 0;
-    }
 }
 
 public interface IPathfidningAdapter
@@ -149,46 +24,45 @@ public interface IPathfidningAdapter
 [System.Serializable]
 public class Tile
 {
-    public Transform[] sprites = new Transform[4];
+    public Transform[] Sprites = new Transform[4];
 
     public Transform GroundSprite0
     {
-        get { return sprites[(int)ETileSprite.GroundSprite0]; }
-        set { sprites[(int)ETileSprite.GroundSprite0] = value; }
+        get { return Sprites[(int)ETileSprite.GroundSprite0]; }
+        set { Sprites[(int)ETileSprite.GroundSprite0] = value; }
     }
 
     public Transform GroundSprite1
     {
-        get { return sprites[(int)ETileSprite.GroundSprite1]; }
-        set { sprites[(int)ETileSprite.GroundSprite1] = value; }
+        get { return Sprites[(int)ETileSprite.GroundSprite1]; }
+        set { Sprites[(int)ETileSprite.GroundSprite1] = value; }
 
     }
 
     public Transform ObjectSprite0
     {
-        get { return sprites[(int)ETileSprite.ObjectSprite0]; }
-        set { sprites[(int)ETileSprite.ObjectSprite0] = value; }
+        get { return Sprites[(int)ETileSprite.ObjectSprite0]; }
+        set { Sprites[(int)ETileSprite.ObjectSprite0] = value; }
 
     }
 
     public Transform ObjectSprite1
     {
-        get { return sprites[(int)ETileSprite.ObjectSprite1]; }
-        set { sprites[(int)ETileSprite.ObjectSprite1] = value; }
+        get { return Sprites[(int)ETileSprite.ObjectSprite1]; }
+        set { Sprites[(int)ETileSprite.ObjectSprite1] = value; }
 
     }
 
-    public Tile ObjectTile0Reference;
-    public Tile ObjectTile1Reference;
-    public Vector2Int coords;
+    public Tile[] TileReferences = new Tile[4];
+    public Vector2Int Coordinates;
 
     public Transform GetSprite(ETileSprite sprite)
     {
-        return this.sprites[(int)sprite];
+        return this.Sprites[(int)sprite];
     }
-
-
 }
+
+
 
 [System.Serializable]
 public class TileGridManager
@@ -211,7 +85,7 @@ public class TileGridManager
             for (var y = 0; y < this.sizeY; y++)
             {
                 tiles[x, y] = new Tile();
-                tiles[x, y].coords = new Vector2Int(x, y);
+                tiles[x, y].Coordinates = new Vector2Int(x, y);
             }
         }
 
@@ -234,50 +108,95 @@ public class TileGridManager
         return this.tiles[(int)coords.x, (int)coords.y];
     }
 
-    public Tile SetupTile(Vector2Int coords, ETileSprite etsprite, Transform prefab, Vector2Int size, Vector2 offset)
+    public Tile SetupTile(Vector2Int coords, ETileSprite ets, Transform prefab, Vector2Int size, Vector2 offset, bool notWalkable)
     {
         CleanTileObjects(coords);
         var tile = GetTile(coords);
         var sprite = InstantiatePrefab(prefab, new Vector3(coords.x + offset.x, 0, coords.y + offset.y));
-        AllocateMultiTileObject(coords, etsprite, sprite, size);
+        tile.Sprites[(int)ets] = sprite;
+        AllocateMultiTileObject(coords, ets, size, notWalkable);
         return tile;
     }
 
-
-    public void CleanTile(Vector2Int coords)
+    public Tile[,] SetupTiles(Vector2Int coords, ETileSprite ets, Transform prefab, Vector2Int size, bool notWalkable)
     {
-        CleanTileGround(coords);
-        CleanTileObjects(coords);
+        CleanTiles(coords, ets,size);
+        var mainTile = GetTile(coords);
+        var tiles = AllocateMultiTileObject(coords, ets, size, notWalkable);
+        tiles.ForEach(tile =>
+        {
+            var sprite = InstantiatePrefab(prefab, tile.Coordinates.Vector3(EVectorComponents.XZ)) as Transform;
+            tile.Sprites[(int)ets] = sprite;
+        });
+        return tiles;
     }
-    public void CleanTileGround(Vector2Int coords)
+
+    public Tile[,] AllocateMultiTileObject(Vector2Int coords, ETileSprite ets, Vector2Int size, bool notWalkable)
+    {
+        var result = new Tile[size.x, size.y];
+        // set prefab on first tile and set references on all other tiles
+        var mainTile = GetTile(coords);
+        for (var x = 0; x < size.x; x++)
+        {
+            for (var y = 0; y < size.y; y++)
+            {
+                var currcoods = coords + new Vector2Int(x, y);
+                var tile = GetTile(currcoods);
+                tile.TileReferences[(int)ets] = mainTile;
+                result[x, y] = tile;
+                if (notWalkable) PathFinding.SetTile(currcoods, tile);
+            }
+        }
+        return result;
+    }
+
+    public void CleanTile(Vector2Int coords, ETileSprite ets)
     {
         var tile = GetTile(coords);
-        if (tile.GroundSprite0 != null)
-            GameObject.DestroyImmediate(tile.GroundSprite0.gameObject);
-        if (tile.GroundSprite1!= null)
-            GameObject.DestroyImmediate(tile.GroundSprite1.gameObject);
+        var reftile = tile.TileReferences[(int)ets];
+        if (reftile != null && reftile != tile)
+        {
+            // use recursion, but tiles should not be referenced in chains
+            CleanTile(reftile.Coordinates, ets);
+        }
+        else
+        {
+            this.tiles.ForEach(t =>
+            {
+                if (t.TileReferences[(int)ets] != null && t.TileReferences[(int)ets].Equals(tile))
+                {
+                    if (t.Sprites[(int)ets] != null)
+                    {
+                        GameObject.DestroyImmediate(t.Sprites[(int)ets].gameObject);
+                    }
+                }
+            });
+        }
+    }
+
+    public void CleanTiles(Vector2Int coords, ETileSprite ets, Vector2Int size)
+    {
+        var allcoords = GenerateAllCoords(coords, size);
+        allcoords.ForEach(c =>
+        {
+            CleanTile(c, ets);
+        });
+    }
+
+    public void CleanTileGround(Vector2Int coords)
+    {
+        CleanTile(coords, ETileSprite.GroundSprite0);
+        CleanTile(coords, ETileSprite.GroundSprite1);
     }
     public void CleanTileObjects(Vector2Int coords)
     {
-        var tile = GetTile(coords);
-        if (tile.ObjectSprite0 != null)
-            GameObject.DestroyImmediate(tile.ObjectSprite0.gameObject);
-        if (tile.ObjectSprite1 != null)
-            GameObject.DestroyImmediate(tile.ObjectSprite1.gameObject);
-        if (tile.ObjectTile0Reference != null && tile.ObjectTile0Reference != tile)
-            CleanTileObjects(tile.ObjectTile0Reference.coords);
-
+        CleanTile(coords, ETileSprite.ObjectSprite0);
+        CleanTile(coords, ETileSprite.ObjectSprite1);
     }
 
-    public void ForEach(System.Action<Vector2Int, Tile> callback)
+    public void ForEach(System.Action<Tile> callback)
     {
-        for (var x = 0; x < this.sizeX; x++)
-        {
-            for (var y = 0; y < this.sizeY; y++)
-            {
-                callback(new Vector2Int(x, y), this.tiles[x, y]);
-            }
-        }
+        this.tiles.ForEach(callback);
     }
 
     public Transform InstantiatePrefab(Transform prefab, Vector3 position)
@@ -285,22 +204,7 @@ public class TileGridManager
         return GameObject.Instantiate(prefab, position, Quaternion.Euler(45f, 45f, 0f)) as Transform;
     }
 
-    public void AllocateMultiTileObject(Vector2Int coords, ETileSprite ets, Transform sprite, Vector2Int size)
-    {
-        // set prefab on first tile and set references on all other tiles
-        var mainTile = GetTile(coords);
-        mainTile.ObjectSprite0 = sprite;
-        for (var x = 0; x < size.x; x++)
-        {
-            for (var y = 0; y < size.y; y++)
-            {
-                var currcoods = coords + new Vector2Int(x, y);
-                var tile = GetTile(currcoods);
-                tile.ObjectTile0Reference = mainTile;
-                PathFinding.SetTile(currcoods, tile);
-            }
-        }
-    }
+
 
     public short[,] GetPathfindingView()
     {
@@ -322,8 +226,21 @@ public class TileGridManager
 
     public static bool IsTileWalkable(Tile tile)
     {
-        return tile.ObjectSprite0 == null && tile.ObjectSprite1 == null
-            && tile.ObjectTile0Reference == null && tile.ObjectTile1Reference == null;
+        return tile.ObjectSprite0 == null &&
+            tile.TileReferences[(int)ETileSprite.ObjectSprite0] == null;
+    }
+
+    public static Vector2Int[,] GenerateAllCoords(Vector2Int coords, Vector2Int size)
+    {
+        var result = new Vector2Int[size.x, size.y];
+        for (var x = 0; x < size.x; x++)
+        {
+            for (var y = 0; y < size.y; y++)
+            {
+                result[x, y] = new Vector2Int(coords.x + x, coords.y + y);
+            }
+        }
+        return result;
     }
 
     public bool CheckBounds(Vector2Int coords)
@@ -338,6 +255,8 @@ public class TileGridManager
             return false;
         }
     }
+
+
 
     public Path FindPath(Vector2Int start, Vector2Int end)
     {

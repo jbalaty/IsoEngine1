@@ -2,6 +2,9 @@
 using System.Collections;
 using System;
 
+
+
+
 public class AStarPathfinding : IPathfidningAdapter
 {
 
@@ -10,7 +13,7 @@ public class AStarPathfinding : IPathfidningAdapter
     {
         protected override Double Heuristic(PathNode inStart, PathNode inEnd)
         {
-            int formula = 2;
+            int formula = 3;
             int dx = Math.Abs(inStart.X - inEnd.X);
             int dy = Math.Abs(inStart.Y - inEnd.Y);
 
@@ -105,7 +108,7 @@ public class AStarPathfinding : IPathfidningAdapter
                 if (node.IsWall)
                 {
                     var tile = tgm.GetTile(new Vector2Int(x, y));
-                    foreach (var sprite in tile.sprites)
+                    foreach (var sprite in tile.Sprites)
                     {
                         if (sprite != null)
                         {

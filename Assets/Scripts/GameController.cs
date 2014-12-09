@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Extensions;
 
 [System.Serializable]
 public class InputTile
@@ -14,7 +15,7 @@ public class GameController : MonoBehaviour
 {
     public UIManager UIManager;
     public IsoEngine1.CharacterController CharacterController;
-    public TileGridManager tilesGrid;
+    public TileGridManager TilesGrid;
     public int sizeX;
     public int sizeY;
     public InputTile GroundTile1;
@@ -22,19 +23,20 @@ public class GameController : MonoBehaviour
     public InputTile TreeTile1;
     public InputTile TreeTile2;
     public InputTile Townhall;
-    
+    public Transform TileIndicator;
+
     private bool FadeSpriteCoroutine;
 
     void Awake()
     {
         Debug.Log("GameController awake");
-        tilesGrid = new TileGridManager(new Vector2Int(sizeX, sizeY));
-        tilesGrid.ForEach((v, tile) =>
+        TilesGrid = new TileGridManager(new Vector2Int(sizeX, sizeY));
+        TilesGrid.ForEach((tile) =>
         {
+            var v = tile.Coordinates;
             var itile = (v.x + v.y) % 2 == 0 ? GroundTile1 : GroundTile2;
-            tile.GroundSprite0 = tilesGrid.InstantiatePrefab(itile.Prefab, transform.position + new Vector3(v.x, 0, v.y));
+            tile.GroundSprite0 = TilesGrid.InstantiatePrefab(itile.Prefab, transform.position + new Vector3(v.x, 0, v.y));
         });
-
         // create townhall
         //var mapCenter = new Vector2Int (sizeX / 2, sizeY / 2);
         //tilesGrid.SetupTile (mapCenter, ETileSprite.ObjectSprite0, Townhall.Prefab, new Vector2Int(Townhall.Size), Townhall.Offset);
@@ -44,11 +46,11 @@ public class GameController : MonoBehaviour
         {
             var x = Random.Range(0, (sizeX - 1) / 3) * 3;
             var y = Random.Range(0, (sizeY - 1) / 3) * 3;
-            var tile = tilesGrid.GetTile(new Vector2Int(x, y));
+            var tile = TilesGrid.GetTile(new Vector2Int(x, y));
             if (tile.ObjectSprite0 == null && (new Vector2(x, y) - new Vector2(sizeX / 2, sizeY / 2)).magnitude > 4)
             {
                 var itile = i % 2 == 0 ? TreeTile1 : TreeTile2;
-                tilesGrid.SetupTile(new Vector2Int(x, y), ETileSprite.ObjectSprite0, itile.Prefab, new Vector2Int(itile.Size), itile.Offset);
+                TilesGrid.SetupTile(new Vector2Int(x, y), ETileSprite.ObjectSprite0, itile.Prefab, new Vector2Int(itile.Size), itile.Offset, true);
             }
         }
     }
@@ -79,8 +81,13 @@ public class GameController : MonoBehaviour
         //		}
         if (!UIManager.IsShopPanelVisible)
         {
-            this.tilesGrid.DebugHighlightNotWalkableTiles(true);
+            //this.TilesGrid.DebugHighlightNotWalkableTiles(true);
+            var red = Color.red;
+            red.a = .7f;
+            var tiles = TilesGrid.SetupTiles(new Vector2Int(x, y), ETileSprite.ObjectSprite1, TileIndicator, new Vector2Int(3, 3), false);
+            tiles.ForEach(tile=>tile.ObjectSprite1.GetComponent<SpriteRenderer>().color = red);
             CharacterController.SetTargetTile(new Vector2Int(x, y));
+
         }
     }
 
@@ -105,6 +112,6 @@ public class GameController : MonoBehaviour
     {
         // create townhall
         var mapCenter = new Vector2Int(sizeX / 2, sizeY / 2);
-        tilesGrid.SetupTile(mapCenter, ETileSprite.ObjectSprite0, Townhall.Prefab, new Vector2Int(Townhall.Size), Townhall.Offset);
+        TilesGrid.SetupTile(mapCenter, ETileSprite.ObjectSprite0, Townhall.Prefab, new Vector2Int(Townhall.Size), Townhall.Offset, true);
     }
 }
