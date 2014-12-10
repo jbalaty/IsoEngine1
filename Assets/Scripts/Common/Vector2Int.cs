@@ -22,6 +22,12 @@ public struct Vector2Int
         this.y = y;
     }
 
+    public Vector2Int(float x, float y)
+    {
+        this.x = (int)x;
+        this.y = (int)y;
+    }
+
     public Vector2Int(Vector2 v)
     {
         this.x = (int)v.x;
@@ -111,5 +117,20 @@ public struct Vector2Int
         }
         else
             throw new UnityException("Cannot convert to Vector3 according to components specification " + evc);
+    }
+
+    public static Vector2Int One
+    {
+        get
+        {
+            return new Vector2Int(1, 1);
+        }
+    }
+    public static Vector2Int Zero
+    {
+        get
+        {
+            return new Vector2Int(0, 0);
+        }
     }
 };

@@ -17,5 +17,16 @@ namespace Extensions
                 }
             }
         }
+
+        public static void ForEach<T>(this T[,] grid, Action<Vector2Int, T> callback)
+        {
+            for (var x = 0; x < grid.GetLength(0); x++)
+            {
+                for (var y = 0; y < grid.GetLength(1); y++)
+                {
+                    callback(new Vector2Int(x,y), grid[x, y]);
+                }
+            }
+        }
     }
 }

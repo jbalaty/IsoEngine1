@@ -68,10 +68,19 @@ public class AStarPathfinding : IPathfidningAdapter
         aStar = new MySolver<MyPathNode, System.Object>(grid);
     }
 
-    public void SetTile(Vector2Int position, Tile tile)
+    public void SetTile(Vector2Int position, bool isWalkable)
     {
-        grid[position.x, position.y] = GenerateNodeFromTile(position, tile);
+        var node = new MyPathNode();
+        node.X = position.x;
+        node.Y = position.y;
+        node.IsWall = !isWalkable;
+        grid[position.x, position.y] = node; 
         aStar = new MySolver<MyPathNode, System.Object>(grid);
+    }
+
+    public MyPathNode GetNode(Vector2Int position)
+    {
+        return grid[position.x, position.y];
     }
 
     public Path FindPath(Vector2Int start, Vector2Int end)
@@ -88,43 +97,5 @@ public class AStarPathfinding : IPathfidningAdapter
         return result;
     }
 
-    MyPathNode GenerateNodeFromTile(Vector2Int vec, Tile tile)
-    {
-        var node = new MyPathNode();
-        node.X = vec.x;
-        node.Y = vec.y;
-        node.IsWall = !TileGridManager.IsTileWalkable(tile);
-        return node;
-    }
-
-    #region DEBUG FUNCTIONS
-    public void DebugHighlightNotWalkableTiles(TileGridManager tgm, bool highlight)
-    {
-        for (int x = 0; x < aStar.Width; x++)
-        {
-            for (int y = 0; y < aStar.Height; y++)
-            {
-                var node = aStar.SearchSpace[x, y];
-                if (node.IsWall)
-                {
-                    var tile = tgm.GetTile(new Vector2Int(x, y));
-                    foreach (var sprite in tile.Sprites)
-                    {
-                        if (sprite != null)
-                        {
-                            var color = sprite.GetComponent<SpriteRenderer>().color;
-                            color.a = 0.5f;
-                            sprite.GetComponent<SpriteRenderer>().color = color;
-                        }
-                    }
-                }
-            }
-        }
-        //		this.ForEach ((v,tile) => {
-        //			if (!IsTileWalkable (tile)) {
-        //				
-        //			}
-        //		});
-    }
-    #endregion
+    
 }

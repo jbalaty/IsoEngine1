@@ -3,77 +3,89 @@ using UnityEngine.EventSystems;
 using System.Collections;
 using System.Collections.Generic;
 
+public enum ELastMouseDownHit
+{
+    Nothing, UI, GameMap, GameObject
+}
+
 public class CameraController : MonoBehaviour
 {
 
-	//float speed = 1f;
-	public float MinZoom = 1;
-	public float MaxZoom = 10;
-	public float CameraMovementSpeed = 0.5f;
-	public GameController GameController;
-	private Vector3? MouseDownPoint;
-    private bool LastMouseDownWasUIHit = false;
 
-	// Use this for initialization
-	void Start ()
-	{
 
-	}
-	
-	// Update is called once per frame
-	void Update ()
-	{
-		//var camera = this.GetComponent<Camera>();
-		//camera.orthographicSize -= speed * Time.deltaTime;
 
-		if (Input.GetAxis ("Mouse ScrollWheel") > 0) { // forward
-			Camera.main.orthographicSize = Mathf.Max (MinZoom, Camera.main.orthographicSize - 0.25f);
+    //float speed = 1f;
+    public float MinZoom = 1;
+    public float MaxZoom = 10;
+    public float CameraMovementSpeed = 0.5f;
+    public GameController GameController;
+    private Vector3? MouseDownPoint;
+    private ELastMouseDownHit LastMouseDownHitType = ELastMouseDownHit.Nothing;
 
-		}
-		if (Input.GetAxis ("Mouse ScrollWheel") < 0) { // back
-			Camera.main.orthographicSize = Mathf.Min (MaxZoom, Camera.main.orthographicSize + 0.25f);
-		}
+    // Use this for initialization
+    void Start()
+    {
 
-		if (Input.GetMouseButton(0) && Input.GetAxis ("Mouse X") != 0 
-			&& Input.GetAxis ("Mouse Y") != 0) {
-			Camera.main.transform.Translate (
-				new Vector3 (-Input.GetAxis ("Mouse X") * CameraMovementSpeed,
-			            -Input.GetAxis ("Mouse Y") * CameraMovementSpeed, 0));
-		}
-		if(Input.GetMouseButtonDown(0)){
-            if (!IsUIHit())
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        // ZOOMING
+        if (Input.GetAxis("Mouse ScrollWheel") > 0)
+        { // forward
+            Camera.main.orthographicSize = Mathf.Max(MinZoom, Camera.main.orthographicSize - 0.25f);
+
+        }
+        if (Input.GetAxis("Mouse ScrollWheel") < 0)
+        { // back
+            Camera.main.orthographicSize = Mathf.Min(MaxZoom, Camera.main.orthographicSize + 0.25f);
+        }
+
+        // MOUSE MOVE
+        if (Input.GetMouseButton(0) && Input.GetAxis("Mouse X") != 0
+            && Input.GetAxis("Mouse Y") != 0)
+        {
+            if (this.LastMouseDownHitType == ELastMouseDownHit.Nothing || this.LastMouseDownHitType == ELastMouseDownHit.GameMap)
             {
-                this.MouseDownPoint = Input.mousePosition;
-                this.LastMouseDownWasUIHit = false;
+                Camera.main.transform.Translate(
+                    new Vector3(-Input.GetAxis("Mouse X") * CameraMovementSpeed,
+                            -Input.GetAxis("Mouse Y") * CameraMovementSpeed, 0));
             }
-            else
+            else if (this.LastMouseDownHitType == ELastMouseDownHit.GameObject)
             {
-                this.LastMouseDownWasUIHit = true;
+                GameController.MouseMove(new Vector2Int(Input.mousePosition),
+                    new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y")));
             }
-		}
-		if (Input.GetMouseButtonUp (0)) {
-            if (!this.LastMouseDownWasUIHit)
+        }
+        if (Input.GetMouseButtonDown(0))
+        {
+            // store position
+            this.MouseDownPoint = Input.mousePosition;
+            if (IsUIHit())
             {
+                // set UI hit flag for next frame
+                this.LastMouseDownHitType = ELastMouseDownHit.UI;
+            }
+            this.LastMouseDownHitType = GameController.MouseDown(new Vector2Int(Input.mousePosition, EVectorComponents.XY));
+        }
+        if (Input.GetMouseButtonUp(0))
+        {
+            if (this.LastMouseDownHitType == ELastMouseDownHit.GameObject || this.LastMouseDownHitType == ELastMouseDownHit.GameMap)
+            {
+                // if mouse down was near mouse up
                 if (this.MouseDownPoint == null || (this.MouseDownPoint.Value - Input.mousePosition).magnitude <= 5f)
                 {
-                    RaycastHit hit;
-                    var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-                    Debug.DrawRay(ray.origin, ray.direction * 10, Color.yellow);
-                    if (Physics.Raycast(ray, out hit, 100f))
-                    {
-                        int x = Mathf.FloorToInt(hit.point.x);
-                        int y = Mathf.FloorToInt(hit.point.z);
-                        //					Debug.Log ("Hit at coords" + hit.point + "(" + x + "," + y + ")");
-
-                        GameController.HighlightTile(x, y);
-                    }
+                    GameController.MouseUp(new Vector2Int(Input.mousePosition));
                 }
-                this.MouseDownPoint = null;
+                else
+                {
+                    GameController.MouseUpAfterMove(new Vector2Int(Input.mousePosition));
+                }
             }
-		}
-
-		//Camera.main.orthographicSize = Mathf.Clamp (Camera.main.orthographicSize, orthographicSizeMin, orthographicSizeMax);
-	}
+            this.MouseDownPoint = null;
+        }
+    }
 
     bool IsUIHit()
     {
@@ -84,5 +96,5 @@ public class CameraController : MonoBehaviour
         if (hits.Count > 0) Debug.Log("UI Hit!!!");
         return hits.Count > 0;
     }
-    
+
 }

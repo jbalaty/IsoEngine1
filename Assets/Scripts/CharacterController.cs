@@ -22,7 +22,7 @@ namespace IsoEngine1
 		public void SetTargetTile (Vector2Int? targettile)
 		{
 			this.TargetTile = targettile;
-			currentPath = gameController.TilesGrid.FindPath (new Vector2Int (this.transform.position, EVectorComponents.XZ), targettile.Value);
+			currentPath = gameController.MapManager.FindPath (new Vector2Int (this.transform.position, EVectorComponents.XZ), targettile.Value);
 		}
 
 		// Update is called once per frame
@@ -44,7 +44,7 @@ namespace IsoEngine1
 						prev = n;
 					} 
                     // DEBUG END
-					if (currentPath != null && gameController.TilesGrid.GetIsWalkable (nextposition)) {
+					if (currentPath != null && gameController.MapManager.IsTileWalkable (nextposition)) {
 						//start movement to next tile
 //						Debug.Log ("Moving to next position " + nextposition);
 						StartCoroutine (MoveToPosition (nextposition.Vector3 (EVectorComponents.XZ)));
