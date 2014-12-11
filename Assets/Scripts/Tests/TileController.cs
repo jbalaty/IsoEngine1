@@ -5,7 +5,7 @@ public class TileController : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-	
+        Debug.Log("Tile Controller - Start");
 	}
 	
 	// Update is called once per frame
@@ -13,8 +13,9 @@ public class TileController : MonoBehaviour {
 	
 	}
 
-	void OnMouseOver() {
-		Debug.Log("On tile mouse over");
+    void OnMouseDown()
+    {
+        Debug.Log("On tile OnMouseDown");
 	}
 	
 }

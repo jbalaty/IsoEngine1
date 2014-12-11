@@ -72,6 +72,8 @@ public class GameController : MonoBehaviour
                 MapManager.SetupObject(new Vector2Int(x, y), treesLayer, obj, new Vector2Int(itile.Size));
             }
         }
+
+        ShowOkCancelSprites(new Vector2Int());
     }
     // Use this for initialization
     void Start()
@@ -107,7 +109,7 @@ public class GameController : MonoBehaviour
             {
                 // set UI hit flag for next frame
                 var coords = GetTilePositionFromMouse(Input.mousePosition);
-                this.LastMouseDownMapObject = PickMapObject(coords);
+                this.LastMouseDownMapObject = PickMapObject(coords, true);
             }
         }
         // MOUSE BUTTON UP
@@ -124,13 +126,14 @@ public class GameController : MonoBehaviour
                 {
                     var oldSelectedObject = this.LastMouseUpMapObject;
                     var coords = GetTilePositionFromMouse(Input.mousePosition);
-                    this.LastMouseUpMapObject = PickMapObject(coords);
+                    this.LastMouseUpMapObject = PickMapObject(coords, true);
                     if (oldSelectedObject != null && oldSelectedObject != this.LastMouseUpMapObject && oldSelectedObject is ISelectable)
                     {
                         // deselect old object
                         (oldSelectedObject as ISelectable).OnDeselected();
                     }
                     if (this.LastMouseUpMapObject != null) (this.LastMouseUpMapObject as ISelectable).OnSelected();
+                    else if (coords.HasValue) HighlightTile(coords.Value);
                 }
                 else
                 {
@@ -212,20 +215,18 @@ public class GameController : MonoBehaviour
         return hits.Count > 0;
     }
 
-    public GridObject PickMapObject(Vector2Int? coords)
+    public GridObject PickMapObject(Vector2Int? coords, bool selectableOnly)
     {
         GridObject result = null;
         var tile = MapManager.GetTile(coords.Value);
         // select first object by topdown order Overlay->Objects(eg. Buldings)->...
         foreach (var obj in tile.GridObjectReferences.Reverse())
         {
-            if (obj != null && obj is ISelectable)
+            if (obj != null)
             {
-                result = obj;
-                //this.LastSelectedMapObjectLayer = (ETileLayer)obj.LayerIndex;
-                //(obj as ISelectable).OnSelected();
-                if (result != null)
+                if ((selectableOnly && obj is ISelectable) || !selectableOnly)
                 {
+                    result = obj;
                     break;
                 }
             }
@@ -238,20 +239,21 @@ public class GameController : MonoBehaviour
         // create townhall
         var mapCenter = new Vector2Int(sizeX / 2, sizeY / 2);
         var obj = new GridObjectSpriteSDGameObject("Townhall", Townhall.Prefab, Townhall.Offset, this.TileIndicator);
-        MapManager.SetupObject(mapCenter, ETileLayer.Overlay0.Int(), obj, new Vector2Int(Townhall.Size));
+        MapManager.SetupObject(mapCenter, ETileLayer.Object0.Int(), obj, new Vector2Int(Townhall.Size));
     }
 
     public void ShowOkCancelSprites(Vector2Int coords)
     {
-
+        var clone = MapManager.InstantiatePrefab(this.Townhall.Prefab, new Vector3(10f, 5f, 10f));
+        
     }
     public void HighlightTile(Vector2Int coords)
     {
         //DebugHighlightNotWalkableTiles(true);
-        var obj = new GridObjectMultiSprite("SelectedTileIndicator", TileIndicator, Vector2.zero);
-        var tiles = MapManager.SetupObject(coords, ETileLayer.Overlay0.Int(), obj, new Vector2Int(3, 3));
-        var c = Color.green; c.a = .7f;
-        obj.SetColor(c);
+        //var obj = new GridObjectMultiSprite("SelectedTileIndicator", TileIndicator, Vector2.zero);
+        //var tiles = MapManager.SetupObject(coords, ETileLayer.Overlay0.Int(), obj, new Vector2Int(3, 3));
+        //var c = Color.green; c.a = .7f;
+        //obj.SetColor(c);
         CharacterController.SetTargetTile(coords);
     }
 

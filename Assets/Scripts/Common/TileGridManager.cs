@@ -176,10 +176,19 @@ namespace IsoEngine1
             return obj;
         }
 
-        public GridObject SetupObject(Vector2Int coords, int layerIndex, GridObject obj, Vector2Int size)
+        public GridObject SetupObject(Vector2Int coords, int layerIndex, GridObject obj, Vector2Int size, bool overwriteExisting = false)
         {
             // clean object at this coordinates and all other coordinates according to size
-            DestroyObjects(coords, size, layerIndex);
+            //DestroyObjects(coords, size, layerIndex);
+            var existingObjects = GetObjects(coords, size, layerIndex);
+            foreach (var eo in existingObjects)
+            {
+                if (eo != null && obj != eo)
+                {
+                    if (overwriteExisting) DestroyObject(eo);
+                    else throw new Exception("Cannot setup new object here, there is some object already and overwriting is turned off");
+                }
+            }
             obj.GridManager = this;
             obj.State = GridObject.EState.Active;
             AllocateObject(coords, layerIndex, obj, size);
@@ -187,6 +196,7 @@ namespace IsoEngine1
             obj.OnLayerChanged();
             return obj;
         }
+
         public Tile[,] AllocateObject(Vector2Int coords, int layerIndex, GridObject obj, Vector2Int size)
         {
             var result = new Tile[size.x, size.y];
@@ -271,7 +281,7 @@ namespace IsoEngine1
             return result;
         }
 
-        public Tile[,] MoveObject(GridObject obj, Vector2Int newCoords, int? newLayerIndex)
+        public Tile[,] MoveObject(GridObject obj, Vector2Int newCoords, int? newLayerIndex = null, bool overwriteExisting = false)
         {
             // asure the object stays in grid
             newCoords = RestrictToGrid(newCoords, obj.Size);
@@ -280,7 +290,8 @@ namespace IsoEngine1
             {
                 if (eo != null && obj != eo)
                 {
-                    DestroyObject(eo);
+                    if (overwriteExisting) DestroyObject(eo);
+                    else throw new Exception("Cannot move object here, there is some object already and overwriting is turned off");
                 }
             }
             obj.OccupiedTiles.ForEach(tile => tile.GridObjectReferences[obj.LayerIndex] = null);
