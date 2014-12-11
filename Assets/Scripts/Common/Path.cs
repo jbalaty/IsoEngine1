@@ -3,17 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-public class Path : LinkedList<Vector2Int>
+namespace IsoEngine1
 {
-    public Vector2Int PopFirst()
+    public class Path : LinkedList<Vector2Int>
     {
-        var r = First.Value;
-        this.RemoveFirst();
-        return r;
-    }
+        public Vector2Int PopFirst()
+        {
+            var r = First.Value;
+            this.RemoveFirst();
+            return r;
+        }
 
-    public bool IsEmpty()
-    {
-        return this.Count == 0;
+        public bool IsEmpty()
+        {
+            return this.Count == 0;
+        }
     }
 }

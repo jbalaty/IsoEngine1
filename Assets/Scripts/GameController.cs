@@ -1,11 +1,16 @@
 ﻿using UnityEngine;
+using UnityEngine.EventSystems;
 using System.Collections;
-using Extensions;
+using System.Collections.Generic;
+using IsoEngine1;
 using System.Linq;
 
 
 
-
+public enum EMouseHitType
+{
+    Nothing, UI, GameMap, GameObject
+}
 
 
 [System.Serializable]
@@ -30,12 +35,15 @@ public class GameController : MonoBehaviour
     public InputTile TreeTile2;
     public InputTile Townhall;
     public Transform TileIndicator;
-
-    GridObject LastSelectedMapObject;
-    ETileLayer LastSelectedMapObjectLayer;
     AStarPathfinding astar;
 
-    private bool FadeSpriteCoroutine;
+    #region input handling vars
+    GridObject LastMouseUpMapObject;
+    GridObject LastMouseDownMapObject;
+    private Vector3? MouseDownPoint;
+    private EMouseHitType LastMouseDownHitType = EMouseHitType.Nothing;
+    private float MouseMoveTreshold = 5f;
+    #endregion
 
     void Awake()
     {
@@ -46,8 +54,8 @@ public class GameController : MonoBehaviour
         {
             var v = tile.Coordinates;
             var itile = (v.x + v.y) % 2 == 0 ? GroundTile1 : GroundTile2;
-            var obj = new GridObjectSprite(itile.Prefab, Vector2Int.One, Vector2.zero);
-            MapManager.SetupObject(v, ETileLayer.Ground0.Int(), obj, obj.Size);
+            var obj = new GridObjectSprite("Tile@" + v.x + "," + v.y, itile.Prefab, Vector2.zero);
+            MapManager.SetupObject(v, ETileLayer.Ground0.Int(), obj, new Vector2Int(itile.Size));
         });
 
         var treesLayer = ETileLayer.Object0.Int();
@@ -59,7 +67,8 @@ public class GameController : MonoBehaviour
             if (tile.GridObjectReferences[treesLayer] == null && (new Vector2(x, y) - new Vector2(sizeX / 2, sizeY / 2)).magnitude > 4)
             {
                 var itile = i % 2 == 0 ? TreeTile1 : TreeTile2;
-                var obj = new GridObjectSprite(itile.Prefab, new Vector2Int(itile.Size), itile.Offset);
+                var obj = new GridObjectSpriteSDGameObject("Tree@" + x + "," + y, itile.Prefab,
+                    itile.Offset, TileIndicator);
                 MapManager.SetupObject(new Vector2Int(x, y), treesLayer, obj, new Vector2Int(itile.Size));
             }
         }
@@ -74,78 +83,116 @@ public class GameController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //DebugHighlightNotWalkableTiles(true);
 
+        // if mouseDown is on GUI do nothing (GUI will handle that)
+        // if mouseUp is on GUI do nothing
+        // if mouseUp is really close to mouseDown, consider that a click
+        // if mouseUp is farer, it is mouseUp after dragging
+        // click selects some game object or nothing
 
-    }
-
-    #region INPUT HANDLING
-    public ELastMouseDownHit MouseDown(Vector2Int mousePosition)
-    {
-        var coords = GetTilePositionFromMouse(mousePosition);
-        if (coords != null)
+        // MOUSE HANDLING
+        // MOUSE BUTTON DOWN
+        if (Input.GetMouseButtonDown(0))
         {
-            var tile = MapManager.GetTile(coords.Value);
-            // select first object by topdown order Overlay->Objects(eg. Buldings)->...
-            var layers = new ETileLayer[] { ETileLayer.Overlay, ETileLayer.Object0 };
-            foreach (var l in layers)
+            this.LastMouseDownHitType = EMouseHitType.Nothing;
+            // store position
+            this.MouseDownPoint = Input.mousePosition;
+            if (this.LastMouseDownHitType == EMouseHitType.UI || IsUIHit())
             {
-                this.LastSelectedMapObject = tile.GridObjectReferences[(int)l];
-                this.LastSelectedMapObjectLayer = l;
-                if (this.LastSelectedMapObject != null) return ELastMouseDownHit.GameObject;
-            }
-            return ELastMouseDownHit.GameMap;
-        }
-        return ELastMouseDownHit.Nothing;
-    }
-
-    public void MouseUpAfterMove(Vector2Int mousePosition)
-    {
-        if (this.LastSelectedMapObject != null)
-        {
-
-            (this.LastSelectedMapObject as GridObjectMultiSprite).SetColor(Color.cyan);
-        }
-        this.LastSelectedMapObject = null;
-        this.LastSelectedMapObjectLayer = ETileLayer.Ground0;
-    }
-
-    public void MouseUp(Vector2Int mousePosition)
-    {
-        var coords = GetTilePositionFromMouse(mousePosition);
-        if (coords != null)
-        {
-            if (this.LastSelectedMapObject != null && this.LastSelectedMapObjectLayer == ETileLayer.Overlay)
-            {
-                MapManager.DestroyObject(coords.Value, ETileLayer.Overlay.Int());
+                // do nothing
+                this.LastMouseDownHitType = EMouseHitType.UI;
             }
             else
             {
-                HighlightTile(coords.Value);
-
+                // set UI hit flag for next frame
+                var coords = GetTilePositionFromMouse(Input.mousePosition);
+                this.LastMouseDownMapObject = PickMapObject(coords);
             }
-            this.LastSelectedMapObject = null;
-            this.LastSelectedMapObjectLayer = ETileLayer.Ground0;
         }
-    }
-
-    public void MouseMove(Vector2Int mousePosition, Vector2 delta)
-    {
-        if (this.LastSelectedMapObject != null && this.LastSelectedMapObjectLayer == ETileLayer.Overlay)
+        // MOUSE BUTTON UP
+        if (Input.GetMouseButtonUp(0))
         {
-            var obj = (this.LastSelectedMapObject as GridObjectMultiSprite);
-            obj.SetColor(Color.yellow);
-            var coords = GetTilePositionFromMouse(mousePosition);
-            if (coords != null)
+            if (this.LastMouseDownHitType == EMouseHitType.UI || IsUIHit())
             {
-                obj.Move(coords.Value);
+                // do nothing
             }
+            else
+            {
+                // if mouse down was near mouse up => its mouseClick, try to select some object
+                if (this.MouseDownPoint == null || (this.MouseDownPoint.Value - Input.mousePosition).magnitude <= MouseMoveTreshold)
+                {
+                    var oldSelectedObject = this.LastMouseUpMapObject;
+                    var coords = GetTilePositionFromMouse(Input.mousePosition);
+                    this.LastMouseUpMapObject = PickMapObject(coords);
+                    if (oldSelectedObject != null && oldSelectedObject != this.LastMouseUpMapObject && oldSelectedObject is ISelectable)
+                    {
+                        // deselect old object
+                        (oldSelectedObject as ISelectable).OnDeselected();
+                    }
+                    if (this.LastMouseUpMapObject != null) (this.LastMouseUpMapObject as ISelectable).OnSelected();
+                }
+                else
+                {
+                    //if mouse up is far from mouseDown point, it was a drag move
+                    // start dragging
+                    if (this.LastMouseUpMapObject != null && this.LastMouseUpMapObject is IDraggable)
+                    {
+                        var draggable = this.LastMouseUpMapObject as IDraggable;
+                        //var coords = GetTilePositionFromMouse(Input.mousePosition);
+                        if (draggable.IsDragged)
+                        {
+                            draggable.IsDragged = false;
+                            draggable.OnDragEnd();
+                        }
+                        //if (coords.HasValue) dragable.OnDragMove(coords.Value);
+                    }
+                }
+            }
+            this.MouseDownPoint = null;
+        }
+        // MOUSE MOVE
+        if (Input.GetAxis("Mouse X") != 0 && Input.GetAxis("Mouse Y") != 0)
+        {
+            // if mouse button is down it is either camera movement or drag
+            if (Input.GetMouseButton(0))
+            {
+                // if the mouseDown was on another object than what is selected, scroll the map
+                if (this.LastMouseUpMapObject != this.LastMouseDownMapObject || this.LastMouseUpMapObject == null)
+                {
+                    Camera.main.GetComponent<CameraController>().PanCamera();
+                }
+                // if there was some mouseDown point and we are moving at least some pixels
+                else if (this.MouseDownPoint == null || (this.MouseDownPoint.Value - Input.mousePosition).magnitude > MouseMoveTreshold)
+                {
+                    // start dragging
+                    if (this.LastMouseUpMapObject != null && this.LastMouseUpMapObject is IDraggable)
+                    {
+                        var draggable = this.LastMouseUpMapObject as IDraggable;
+                        var coords = GetTilePositionFromMouse(Input.mousePosition);
+                        if (!draggable.IsDragged)
+                        {
+                            draggable.IsDragged = true;
+                            draggable.OnDragStart();
+                        }
+                        if (coords.HasValue) draggable.OnDragMove(coords.Value);
+                    }
+                }
+            }
+        }
+
+        // INPUT KEYS
+        if (Input.GetKeyUp(KeyCode.Space))
+        {
+            DebugHighlightNotWalkableTiles(true);
         }
     }
 
-    public Vector2Int? GetTilePositionFromMouse(Vector2Int mousePosition)
+    public Vector2Int? GetTilePositionFromMouse(Vector3 mousePosition)
     {
+        //new Vector2Int(Input.mousePosition, EVectorComponents.XY)
         RaycastHit hit;
-        var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        var ray = Camera.main.ScreenPointToRay(mousePosition);
         Debug.DrawRay(ray.origin, ray.direction * 10, Color.yellow);
         if (Physics.Raycast(ray, out hit, 100f))
         {
@@ -155,24 +202,57 @@ public class GameController : MonoBehaviour
         }
         else return null;
     }
-    #endregion
-    public void HighlightTile(Vector2Int coords)
+    bool IsUIHit()
     {
-        DebugHighlightNotWalkableTiles(true);
-        var red = Color.red;
-        red.a = .7f;
-        var obj = new GridObjectMultiSprite(TileIndicator, new Vector2Int(3, 3), Vector2.zero);
-        var tiles = MapManager.SetupObject(coords, ETileLayer.Overlay.Int(), obj, new Vector2Int(3, 3));
-        obj.SetColor(red);
-        CharacterController.SetTargetTile(coords);
+        PointerEventData pe = new PointerEventData(EventSystem.current);
+        pe.position = Input.mousePosition;
+        List<RaycastResult> hits = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pe, hits);
+        if (hits.Count > 0) Debug.Log("UI Hit!!!");
+        return hits.Count > 0;
+    }
+
+    public GridObject PickMapObject(Vector2Int? coords)
+    {
+        GridObject result = null;
+        var tile = MapManager.GetTile(coords.Value);
+        // select first object by topdown order Overlay->Objects(eg. Buldings)->...
+        foreach (var obj in tile.GridObjectReferences.Reverse())
+        {
+            if (obj != null && obj is ISelectable)
+            {
+                result = obj;
+                //this.LastSelectedMapObjectLayer = (ETileLayer)obj.LayerIndex;
+                //(obj as ISelectable).OnSelected();
+                if (result != null)
+                {
+                    break;
+                }
+            }
+        }
+        return result;
     }
 
     public void NewBuilding()
     {
         // create townhall
         var mapCenter = new Vector2Int(sizeX / 2, sizeY / 2);
-        var obj = new GridObjectSprite(Townhall.Prefab, new Vector2Int(Townhall.Size), Townhall.Offset);
-        MapManager.SetupObject(mapCenter, ETileLayer.Object0.Int(), obj, new Vector2Int(Townhall.Size));
+        var obj = new GridObjectSpriteSDGameObject("Townhall", Townhall.Prefab, Townhall.Offset, this.TileIndicator);
+        MapManager.SetupObject(mapCenter, ETileLayer.Overlay0.Int(), obj, new Vector2Int(Townhall.Size));
+    }
+
+    public void ShowOkCancelSprites(Vector2Int coords)
+    {
+
+    }
+    public void HighlightTile(Vector2Int coords)
+    {
+        //DebugHighlightNotWalkableTiles(true);
+        var obj = new GridObjectMultiSprite("SelectedTileIndicator", TileIndicator, Vector2.zero);
+        var tiles = MapManager.SetupObject(coords, ETileLayer.Overlay0.Int(), obj, new Vector2Int(3, 3));
+        var c = Color.green; c.a = .7f;
+        obj.SetColor(c);
+        CharacterController.SetTargetTile(coords);
     }
 
     #region DEBUG FUNCTIONS
@@ -181,7 +261,7 @@ public class GameController : MonoBehaviour
 
         MapManager.GenerateAllCoords(Vector2Int.Zero, MapManager.Size).ForEach(vec =>
         {
-            if (!astar.GetNode(vec).IsWalkable(null))
+            /*if (!astar.GetNode(vec).IsWalkable(null))
             {
                 var tile = MapManager.GetTile(vec);
                 foreach (var o in tile.GridObjectReferences)
@@ -194,8 +274,14 @@ public class GameController : MonoBehaviour
                         sprite.GetComponent<SpriteRenderer>().color = color;
                     }
                 }
+            }*/
+            var tile = MapManager.GetTile(vec);
+            var sr = (tile.GridObjectReferences[0] as GridObjectSprite).Sprite.GetComponent<SpriteRenderer>();
+            if (tile.GridObjectReferences[ETileLayer.Object0.Int()] != null)
+            {
+                sr.color = Color.black;
             }
-
+            else sr.color = Color.green;
         });
     }
     #endregion

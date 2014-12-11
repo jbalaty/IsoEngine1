@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Extensions
+namespace IsoEngine1
 {
     public static class Extensions
     {

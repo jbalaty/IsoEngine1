@@ -1,0 +1,4 @@
+﻿TODO: store picking offset when moving tile
+TODO: collision while moving object - DONE
+TODO: moving object shift to upper layer - DONE
+TODO: SortOrder according to layerindex - DONE
