@@ -33,6 +33,9 @@ namespace IsoEngine1.Components
                 ETileLayer.Overlay0.Int(), this.Indicator, this.GridObject.Size);
             var c = Color.green; c.a = .7f;
             this.Indicator.SetColor(c);
+            if(this.GridObject is GridObjectSpriteSDGameObject){
+                (this.GridObject as GridObjectSpriteSDGameObject).SetColor(c);
+            }
             this.GridObject.Move(this.GridObject.MainTile.Coordinates, ETileLayer.Overlay1.Int());
         }
 
@@ -63,6 +66,13 @@ namespace IsoEngine1.Components
             Debug.Log("OnDragEnd- " + this.GridObject.Name);
             var coltiles = this.GridObject.GridManager.GetCollisionTiles(this.GridObject.MainTile.Coordinates,
                 this.GridObject.Size, ETileLayer.Object0.Int(), this.GridObject);
+            if (this.GridObject is GridObjectSpriteSDGameObject)
+            {
+                
+                var c = (this.GridObject as GridObjectSpriteSDGameObject).SetColor(Color.white);
+                c.a = 1f;
+                (this.GridObject as GridObjectSpriteSDGameObject).SetColor(c);
+            }
             // if there is some collision prevent end of dragging
             if (coltiles.Count == 0)
             {

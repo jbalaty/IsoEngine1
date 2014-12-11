@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using IsoEngine1;
@@ -29,13 +30,15 @@ public class GameController : MonoBehaviour
     public MapManager MapManager;
     public int sizeX;
     public int sizeY;
+    AStarPathfinding astar;
     public InputTile GroundTile1;
     public InputTile GroundTile2;
     public InputTile TreeTile1;
     public InputTile TreeTile2;
     public InputTile Townhall;
     public Transform TileIndicator;
-    AStarPathfinding astar;
+    public RectTransform OkButton;
+    public KeyValuePair<Transform, RectTransform> uitest;
 
     #region input handling vars
     GridObject LastMouseUpMapObject;
@@ -189,6 +192,16 @@ public class GameController : MonoBehaviour
         {
             DebugHighlightNotWalkableTiles(true);
         }
+
+        //if (uitest != null)
+        if (uitest.Key != null)
+        {
+            var v = uitest.Key.transform.position;
+            v.y += 4f;
+            var screenspacepos = Camera.main.WorldToScreenPoint(v);
+            OkButton.gameObject.SetActive(true);
+            OkButton.position = screenspacepos;
+        }
     }
 
     public Vector2Int? GetTilePositionFromMouse(Vector3 mousePosition)
@@ -211,7 +224,7 @@ public class GameController : MonoBehaviour
         pe.position = Input.mousePosition;
         List<RaycastResult> hits = new List<RaycastResult>();
         EventSystem.current.RaycastAll(pe, hits);
-        if (hits.Count > 0) Debug.Log("UI Hit!!!");
+        //if (hits.Count > 0) Debug.Log("UI Hit!!!");
         return hits.Count > 0;
     }
 
@@ -240,12 +253,15 @@ public class GameController : MonoBehaviour
         var mapCenter = new Vector2Int(sizeX / 2, sizeY / 2);
         var obj = new GridObjectSpriteSDGameObject("Townhall", Townhall.Prefab, Townhall.Offset, this.TileIndicator);
         MapManager.SetupObject(mapCenter, ETileLayer.Object0.Int(), obj, new Vector2Int(Townhall.Size));
+        uitest = new KeyValuePair<Transform, RectTransform>(obj.Sprite.transform, OkButton);
     }
 
     public void ShowOkCancelSprites(Vector2Int coords)
     {
-        var clone = MapManager.InstantiatePrefab(this.Townhall.Prefab, new Vector3(10f, 5f, 10f));
-        
+
+
+
+
     }
     public void HighlightTile(Vector2Int coords)
     {
