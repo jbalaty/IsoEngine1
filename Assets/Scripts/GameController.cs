@@ -30,14 +30,14 @@ public class GameController : MonoBehaviour
     public MapManager MapManager;
     public int sizeX;
     public int sizeY;
-    AStarPathfinding astar;
+    public AStarPathfinding astar;
     public InputTile GroundTile1;
     public InputTile GroundTile2;
     public InputTile TreeTile1;
     public InputTile TreeTile2;
     public InputTile Townhall;
     public Transform TileIndicator;
-    public RectTransform OkButton;
+    public RectTransform PanelOkCancel;
     public KeyValuePair<Transform, RectTransform> uitest;
 
     #region input handling vars
@@ -199,8 +199,8 @@ public class GameController : MonoBehaviour
             var v = uitest.Key.transform.position;
             v.y += 4f;
             var screenspacepos = Camera.main.WorldToScreenPoint(v);
-            OkButton.gameObject.SetActive(true);
-            OkButton.position = screenspacepos;
+            PanelOkCancel.gameObject.SetActive(true);
+            PanelOkCancel.position = screenspacepos;
         }
     }
 
@@ -253,7 +253,7 @@ public class GameController : MonoBehaviour
         var mapCenter = new Vector2Int(sizeX / 2, sizeY / 2);
         var obj = new GridObjectSpriteSDGameObject("Townhall", Townhall.Prefab, Townhall.Offset, this.TileIndicator);
         MapManager.SetupObject(mapCenter, ETileLayer.Object0.Int(), obj, new Vector2Int(Townhall.Size));
-        uitest = new KeyValuePair<Transform, RectTransform>(obj.Sprite.transform, OkButton);
+        uitest = new KeyValuePair<Transform, RectTransform>(obj.Sprite.transform, PanelOkCancel);
     }
 
     public void ShowOkCancelSprites(Vector2Int coords)
@@ -270,7 +270,8 @@ public class GameController : MonoBehaviour
         //var tiles = MapManager.SetupObject(coords, ETileLayer.Overlay0.Int(), obj, new Vector2Int(3, 3));
         //var c = Color.green; c.a = .7f;
         //obj.SetColor(c);
-        CharacterController.SetTargetTile(coords);
+        //CharacterController.SetTargetTile(coords);
+        CharacterController.Wander();
     }
 
     #region DEBUG FUNCTIONS

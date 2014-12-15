@@ -319,6 +319,11 @@ namespace IsoEngine1
             result.y = Mathf.Clamp(coords.y, 0, SizeY - size.y);
             return result;
         }
+
+        public Vector2Int GetRandomTileCoords()
+        {
+            return new Vector2Int(UnityEngine.Random.Range(0, this.SizeX), UnityEngine.Random.Range(0, this.SizeY));
+        }
     }
 
 

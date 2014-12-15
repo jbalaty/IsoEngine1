@@ -314,6 +314,20 @@ public class MapManager : TileGridManager
     {
         this.PathFinding.SetTile(tile.Coordinates, this.IsTileWalkableTest(tile));
     }
+
+    public Vector2Int? GetRandomWalkableTile(Vector2Int current)
+    {
+        Vector2Int? result = null;
+        var triesCounter = 0;
+        while (result == null || triesCounter++ < SizeX * SizeY) {
+            var rndtile = GetTile(GetRandomTileCoords());
+            if (IsTileWalkableTest(rndtile))
+            {
+                result = rndtile.Coordinates;
+            }
+        }
+        return result;
+    }
     #endregion
 
 
