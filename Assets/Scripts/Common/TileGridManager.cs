@@ -86,6 +86,7 @@ namespace IsoEngine1
     {
         public int SizeX = 0;
         public int SizeY = 0;
+        public GameObject GridColliderObject;
         public Vector2Int Size
         {
             get { return new Vector2Int(SizeX, SizeY); }
@@ -118,8 +119,7 @@ namespace IsoEngine1
             quad.transform.Rotate(new Vector3(90, 0, 0));
             quad.transform.localScale = new Vector3(this.SizeX, this.SizeY, 0f);
             quad.GetComponent<MeshRenderer>().enabled = false;
-
-
+            this.GridColliderObject = quad;
         }
 
         public Tile GetTile(Vector2Int coords)

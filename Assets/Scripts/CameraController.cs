@@ -11,13 +11,14 @@ public class CameraController : MonoBehaviour
     public float MinZoom = 1;
     public float MaxZoom = 10;
     public float CameraMovementSpeed = 0.5f;
+    public float CameraStartOrthoSize;
     public GameController GameController;
 
 
     // Use this for initialization
     void Start()
     {
-
+        this.CameraStartOrthoSize = Camera.main.orthographicSize;
     }
 
     // Update is called once per frame
@@ -32,6 +33,24 @@ public class CameraController : MonoBehaviour
         if (Input.GetAxis("Mouse ScrollWheel") < 0)
         { // back
             Camera.main.orthographicSize = Mathf.Min(MaxZoom, Camera.main.orthographicSize + 0.25f);
+        }
+
+        if (Input.touchCount == 2)
+        {
+            // Store both touches.
+            Touch touchZero = Input.GetTouch(0);
+            Touch touchOne = Input.GetTouch(1);
+            // Find the position in the previous frame of each touch.
+            Vector2 touchZeroPrevPos = touchZero.position - touchZero.deltaPosition;
+            Vector2 touchOnePrevPos = touchOne.position - touchOne.deltaPosition;
+            // Find the magnitude of the vector (the distance) between the touches in each frame.
+            float prevTouchDeltaMag = (touchZeroPrevPos - touchOnePrevPos).magnitude;
+            float touchDeltaMag = (touchZero.position - touchOne.position).magnitude;
+            // Find the difference in the distances between each frame.
+            float deltaMagnitudeDiff = prevTouchDeltaMag - touchDeltaMag;
+            Camera.main.orthographicSize += deltaMagnitudeDiff * 0.03f;
+            // Make sure the orthographic size never drops below zero.
+            Camera.main.orthographicSize = Mathf.Clamp(camera.orthographicSize, MinZoom, MaxZoom);
         }
     }
 
@@ -65,4 +84,8 @@ public class CameraController : MonoBehaviour
         }
     }
 
+    public float GetCameraScale()
+    {
+        return this.CameraStartOrthoSize / Camera.main.orthographicSize;
+    }
 }

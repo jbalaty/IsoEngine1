@@ -7,12 +7,17 @@ using IsoEngine1;
 using System.Linq;
 
 
-
 public enum EMouseHitType
 {
     Nothing, UI, GameMap, GameObject
 }
 
+public class IngameUIElement
+{
+    public Transform IngameObject;
+    public RectTransform UIObject;
+    public Vector2Int UIOffset;
+}
 
 [System.Serializable]
 public class InputTile
@@ -37,8 +42,12 @@ public class GameController : MonoBehaviour
     public InputTile TreeTile2;
     public InputTile Townhall;
     public Transform TileIndicator;
+    CameraController CameraController;
+
+    #region ingame UI
     public RectTransform PanelOkCancel;
-    public KeyValuePair<Transform, RectTransform> uitest;
+    public List<IngameUIElement> IngameUIElements = new List<IngameUIElement>();
+    #endregion
 
     #region input handling vars
     GridObject LastMouseUpMapObject;
@@ -77,12 +86,14 @@ public class GameController : MonoBehaviour
         }
 
         ShowOkCancelSprites(new Vector2Int());
+        CameraController = Camera.main.GetComponent<CameraController>();
+
     }
     // Use this for initialization
     void Start()
     {
         Debug.Log("GameController start");
-
+        CameraController = Camera.main.GetComponent<CameraController>();
     }
 
     // Update is called once per frame
@@ -90,7 +101,7 @@ public class GameController : MonoBehaviour
     {
         //DebugHighlightNotWalkableTiles(true);
 
-        UpdateInputTouch();
+        //UpdateInputTouch();
 
 
         // if mouseDown is on GUI do nothing (GUI will handle that)
@@ -101,8 +112,9 @@ public class GameController : MonoBehaviour
 
         // MOUSE HANDLING
         // MOUSE BUTTON DOWN
-        /*if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0))
         {
+            Debug.Log("Mouse down");
             this.LastMouseDownHitType = EMouseHitType.Nothing;
             // store position
             this.MouseDownPoint = Input.mousePosition;
@@ -121,6 +133,7 @@ public class GameController : MonoBehaviour
         // MOUSE BUTTON UP
         if (Input.GetMouseButtonUp(0))
         {
+            Debug.Log("Mouse Up");
             if (this.LastMouseDownHitType == EMouseHitType.UI || IsUIHit())
             {
                 // do nothing
@@ -161,15 +174,29 @@ public class GameController : MonoBehaviour
             this.MouseDownPoint = null;
         }
         // MOUSE MOVE
-        if (Input.GetAxis("Mouse X") != 0 && Input.GetAxis("Mouse Y") != 0)
+        if (Input.GetAxis("Mouse X") != 0 && Input.GetAxis("Mouse Y") != 0 || Input.touchCount == 1 && Input.GetTouch(0).phase == TouchPhase.Moved)
         {
+            
             // if mouse button is down it is either camera movement or drag
             if (Input.GetMouseButton(0))
             {
                 // if the mouseDown was on another object than what is selected, scroll the map
-                if (this.LastMouseUpMapObject != this.LastMouseDownMapObject || this.LastMouseUpMapObject == null)
+                if (this.LastMouseDownHitType == EMouseHitType.UI)
                 {
-                    Camera.main.GetComponent<CameraController>().PanCamera(new Vector2(Input.GetAxis("Mouse X"),Input.GetAxis("Mouse Y"))*-1);
+                    // do nothing
+                }
+                else if (this.LastMouseUpMapObject != this.LastMouseDownMapObject || this.LastMouseUpMapObject == null)
+                {
+                    if (Input.touchCount == 0)
+                    {
+                        CameraController.PanCamera(new Vector2(Input.GetAxis("Mouse X"),
+                            Input.GetAxis("Mouse Y")) * -1);
+                    }
+                    else
+                    {
+                        var touch = Input.GetTouch(0);
+                        CameraController.PanCamera(touch.deltaPosition * -1, 0.1f);
+                    }
                 }
                 // if there was some mouseDown point and we are moving at least some pixels
                 else if (this.MouseDownPoint == null || (this.MouseDownPoint.Value - Input.mousePosition).magnitude > MouseMoveTreshold)
@@ -189,22 +216,22 @@ public class GameController : MonoBehaviour
                 }
             }
         }
-        */
         // INPUT KEYS
         if (Input.GetKeyUp(KeyCode.Space))
         {
             DebugHighlightNotWalkableTiles(true);
         }
 
-        //if (uitest != null)
-        if (uitest.Key != null)
+        foreach (var uie in IngameUIElements)
         {
-            var v = uitest.Key.transform.position;
+            var v = uie.IngameObject.transform.position;
             v.y += 4f;
             var screenspacepos = Camera.main.WorldToScreenPoint(v);
-            PanelOkCancel.gameObject.SetActive(true);
-            PanelOkCancel.position = screenspacepos;
+            uie.UIObject.gameObject.SetActive(true);
+            uie.UIObject.position = screenspacepos + uie.UIOffset.Vector3(EVectorComponents.XY) * CameraController.GetCameraScale();
+            uie.UIObject.localScale = new Vector3(CameraController.GetCameraScale(), CameraController.GetCameraScale(), 1f);
         }
+
     }
 
     public void UpdateInputTouch()
@@ -219,17 +246,19 @@ public class GameController : MonoBehaviour
 
     public Vector2Int? GetTilePositionFromMouse(Vector3 mousePosition)
     {
-        //new Vector2Int(Input.mousePosition, EVectorComponents.XY)
         RaycastHit hit;
         var ray = Camera.main.ScreenPointToRay(mousePosition);
         Debug.DrawRay(ray.origin, ray.direction * 10, Color.yellow);
         if (Physics.Raycast(ray, out hit, 100f))
         {
-            int x = Mathf.FloorToInt(hit.point.x);
-            int y = Mathf.FloorToInt(hit.point.z);
-            return new Vector2Int(x, y);
+            if (hit.transform.gameObject == MapManager.GridColliderObject)
+            {
+                int x = Mathf.FloorToInt(hit.point.x);
+                int y = Mathf.FloorToInt(hit.point.z);
+                return new Vector2Int(x, y);
+            }
         }
-        else return null;
+        return null;
     }
     bool IsUIHit()
     {
@@ -240,20 +269,22 @@ public class GameController : MonoBehaviour
         //if (hits.Count > 0) Debug.Log("UI Hit!!!");
         return hits.Count > 0;
     }
-
     public GridObject PickMapObject(Vector2Int? coords, bool selectableOnly)
     {
         GridObject result = null;
-        var tile = MapManager.GetTile(coords.Value);
-        // select first object by topdown order Overlay->Objects(eg. Buldings)->...
-        foreach (var obj in tile.GridObjectReferences.Reverse())
+        if (coords.HasValue)
         {
-            if (obj != null)
+            var tile = MapManager.GetTile(coords.Value);
+            // select first object by topdown order Overlay->Objects(eg. Buldings)->...
+            foreach (var obj in tile.GridObjectReferences.Reverse())
             {
-                if ((selectableOnly && obj is ISelectable) || !selectableOnly)
+                if (obj != null)
                 {
-                    result = obj;
-                    break;
+                    if ((selectableOnly && obj is ISelectable) || !selectableOnly)
+                    {
+                        result = obj;
+                        break;
+                    }
                 }
             }
         }
@@ -266,15 +297,12 @@ public class GameController : MonoBehaviour
         var mapCenter = new Vector2Int(sizeX / 2, sizeY / 2);
         var obj = new GridObjectSpriteSDGameObject("Townhall", Townhall.Prefab, Townhall.Offset, this.TileIndicator);
         MapManager.SetupObject(mapCenter, ETileLayer.Object0.Int(), obj, new Vector2Int(Townhall.Size));
-        uitest = new KeyValuePair<Transform, RectTransform>(obj.Sprite.transform, PanelOkCancel);
+        IngameUIElements.Add(new IngameUIElement { IngameObject = obj.Sprite.transform, UIObject = this.PanelOkCancel, UIOffset = new Vector2Int(0, 0) });
+        //IngameUIElements.Add(new KeyValuePair<Transform, RectTransform>(obj.Sprite.transform, CancelButton));
     }
 
     public void ShowOkCancelSprites(Vector2Int coords)
     {
-
-
-
-
     }
     public void HighlightTile(Vector2Int coords)
     {
