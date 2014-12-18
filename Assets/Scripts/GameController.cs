@@ -213,7 +213,7 @@ public class GameController : MonoBehaviour
         {
             var touch = Input.GetTouch(0);
             if (touch.phase == TouchPhase.Moved)
-                Camera.main.GetComponent<CameraController>().PanCamera(touch.deltaPosition * -1, 0.1f);
+                Camera.main.GetComponent<CameraController>().PanCamera(touch.deltaPosition * -1, 0.05f);
         }
     }
 
