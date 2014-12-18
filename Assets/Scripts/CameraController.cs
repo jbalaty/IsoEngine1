@@ -12,7 +12,7 @@ public class CameraController : MonoBehaviour
     public float MaxZoom = 10;
     public float CameraMovementSpeed = 0.5f;
     public GameController GameController;
-    
+
 
     // Use this for initialization
     void Start()
@@ -35,11 +35,18 @@ public class CameraController : MonoBehaviour
         }
     }
 
-    public void PanCamera()
+    public void PanCamera(Vector2 delta)
     {
+        this.PanCamera(delta, this.CameraMovementSpeed);
+    }
+    public void PanCamera(Vector2 delta, float speed)
+    {
+        //Camera.main.transform.Translate(
+        //    new Vector3(-Input.GetAxis("Mouse X") * CameraMovementSpeed,
+        //            -Input.GetAxis("Mouse Y") * CameraMovementSpeed, 0));
         Camera.main.transform.Translate(
-            new Vector3(-Input.GetAxis("Mouse X") * CameraMovementSpeed,
-                    -Input.GetAxis("Mouse Y") * CameraMovementSpeed, 0));
+            new Vector3(delta.x * speed,
+                    delta.y * speed, 0));
     }
 
     public void MoveCameraIfWeAreOnEdgeOfScreen(Vector2Int? gridCoords, Vector2Int mousePosition)

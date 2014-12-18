@@ -90,6 +90,9 @@ public class GameController : MonoBehaviour
     {
         //DebugHighlightNotWalkableTiles(true);
 
+        UpdateInputTouch();
+
+
         // if mouseDown is on GUI do nothing (GUI will handle that)
         // if mouseUp is on GUI do nothing
         // if mouseUp is really close to mouseDown, consider that a click
@@ -98,7 +101,7 @@ public class GameController : MonoBehaviour
 
         // MOUSE HANDLING
         // MOUSE BUTTON DOWN
-        if (Input.GetMouseButtonDown(0))
+        /*if (Input.GetMouseButtonDown(0))
         {
             this.LastMouseDownHitType = EMouseHitType.Nothing;
             // store position
@@ -166,7 +169,7 @@ public class GameController : MonoBehaviour
                 // if the mouseDown was on another object than what is selected, scroll the map
                 if (this.LastMouseUpMapObject != this.LastMouseDownMapObject || this.LastMouseUpMapObject == null)
                 {
-                    Camera.main.GetComponent<CameraController>().PanCamera();
+                    Camera.main.GetComponent<CameraController>().PanCamera(new Vector2(Input.GetAxis("Mouse X"),Input.GetAxis("Mouse Y"))*-1);
                 }
                 // if there was some mouseDown point and we are moving at least some pixels
                 else if (this.MouseDownPoint == null || (this.MouseDownPoint.Value - Input.mousePosition).magnitude > MouseMoveTreshold)
@@ -186,7 +189,7 @@ public class GameController : MonoBehaviour
                 }
             }
         }
-
+        */
         // INPUT KEYS
         if (Input.GetKeyUp(KeyCode.Space))
         {
@@ -201,6 +204,16 @@ public class GameController : MonoBehaviour
             var screenspacepos = Camera.main.WorldToScreenPoint(v);
             PanelOkCancel.gameObject.SetActive(true);
             PanelOkCancel.position = screenspacepos;
+        }
+    }
+
+    public void UpdateInputTouch()
+    {
+        if (Input.touchCount == 1)
+        {
+            var touch = Input.GetTouch(0);
+            if (touch.phase == TouchPhase.Moved)
+                Camera.main.GetComponent<CameraController>().PanCamera(touch.deltaPosition * -1, 0.1f);
         }
     }
 
