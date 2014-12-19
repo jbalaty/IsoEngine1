@@ -16,6 +16,7 @@ namespace IsoEngine1.Components
         GridObject GridObject;
         GridObjectMultiSprite Indicator;
         Transform TileIndicatorPrefab;
+        Vector2Int dragOffset;
         public bool IsDragged { get; set; }
 
         public DraggableComponent(GridObject go, Transform tileidicatorprefab)
@@ -24,16 +25,18 @@ namespace IsoEngine1.Components
             this.TileIndicatorPrefab = tileidicatorprefab;
         }
 
-        public void OnDragStart()
+        public void OnDragStart(Vector2Int dragPosition)
         {
             Debug.Log("OnDragStart- " + this.GridObject.Name);
             this.DragStartPosition = GridObject.MainTile.Coordinates;
+            this.dragOffset = dragPosition - GridObject.MainTile.Coordinates;
             this.Indicator = new GridObjectMultiSprite("SelectedTileIndicator", this.TileIndicatorPrefab, Vector2.zero);
             this.GridObject.GridManager.SetupObject(this.GridObject.OccupiedTiles[0, 0].Coordinates,
                 ETileLayer.Overlay0.Int(), this.Indicator, this.GridObject.Size);
             var c = Color.green; c.a = .7f;
             this.Indicator.SetColor(c);
-            if(this.GridObject is GridObjectSpriteSDGameObject){
+            if (this.GridObject is GridObjectSpriteSDGameObject)
+            {
                 (this.GridObject as GridObjectSpriteSDGameObject).SetColor(c);
             }
             this.GridObject.Move(this.GridObject.MainTile.Coordinates, ETileLayer.Overlay1.Int());
@@ -41,6 +44,7 @@ namespace IsoEngine1.Components
 
         public void OnDragMove(Vector2Int newCoords)
         {
+            newCoords = newCoords - this.dragOffset;
             Debug.Log("OnDragMove- " + this.GridObject.Name);
             this.GridObject.Move(newCoords, ETileLayer.Overlay1.Int());
             this.Indicator.Move(newCoords, null);
@@ -68,7 +72,7 @@ namespace IsoEngine1.Components
                 this.GridObject.Size, ETileLayer.Object0.Int(), this.GridObject);
             if (this.GridObject is GridObjectSpriteSDGameObject)
             {
-                
+
                 var c = (this.GridObject as GridObjectSpriteSDGameObject).SetColor(Color.white);
                 c.a = 1f;
                 (this.GridObject as GridObjectSpriteSDGameObject).SetColor(c);

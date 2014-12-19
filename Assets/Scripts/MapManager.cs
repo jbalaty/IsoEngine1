@@ -48,7 +48,7 @@ public interface ISelectable
 
 public interface IDraggable
 {
-    void OnDragStart();
+    void OnDragStart(Vector2Int coords);
     void OnDragMove(Vector2Int newCoords);
     void OnDragEnd();
     bool IsDragged { get; set; }
@@ -201,9 +201,9 @@ public class GridObjectSpriteSDGameObject : GridObjectSprite, ISelectable, IDrag
         set { DraggableComponent.IsDragged = value; }
     }
 
-    public void OnDragStart()
+    public void OnDragStart(Vector2Int coords)
     {
-        DraggableComponent.OnDragStart();
+        DraggableComponent.OnDragStart(coords);
     }
 
     public void OnDragMove(Vector2Int newCoords)
@@ -251,9 +251,9 @@ public class GridObjectMultiSpriteSDGameObject : GridObjectMultiSprite, ISelecta
         set { DraggableComponent.IsDragged = value; }
     }
 
-    public void OnDragStart()
+    public void OnDragStart(Vector2Int coords)
     {
-        DraggableComponent.OnDragStart();
+        DraggableComponent.OnDragStart(coords);
     }
 
     public void OnDragMove(Vector2Int newCoords)
@@ -306,7 +306,6 @@ public class MapManager : TileGridManager
 
     public Path FindPath(Vector2Int start, Vector2Int end)
     {
-
         return PathFinding.FindPath(start, end);
     }
 
@@ -319,7 +318,8 @@ public class MapManager : TileGridManager
     {
         Vector2Int? result = null;
         var triesCounter = 0;
-        while (result == null || triesCounter++ < SizeX * SizeY) {
+        while (result == null || triesCounter++ < SizeX * SizeY)
+        {
             var rndtile = GetTile(GetRandomTileCoords());
             if (IsTileWalkableTest(rndtile))
             {
