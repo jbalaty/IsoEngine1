@@ -54,13 +54,14 @@ public class GameController : MonoBehaviour
     GridObject LastMouseDownMapObject;
     private Vector3? MouseDownPoint;
     private EMouseHitType LastMouseDownHitType = EMouseHitType.Nothing;
-    private float MouseMoveTreshold = 5f;
+    private float MouseMoveTreshold = 4f;
     #endregion
 
     void Awake()
     {
         Debug.Log("GameController awake");
         astar = new AStarPathfinding();
+        var mapObject = GameObject.Find("Map").transform;
         MapManager = new MapManager(new Vector2Int(sizeX, sizeY), astar);
         MapManager.ForEach((tile) =>
         {
@@ -68,6 +69,7 @@ public class GameController : MonoBehaviour
             var itile = (v.x + v.y) % 2 == 0 ? GroundTile1 : GroundTile2;
             var obj = new GridObjectSprite("Tile@" + v.x + "," + v.y, itile.Prefab, Vector2.zero);
             MapManager.SetupObject(v, ETileLayer.Ground0.Int(), obj, new Vector2Int(itile.Size));
+            obj.Sprite.SetParent(mapObject, true);
         });
 
         var treesLayer = ETileLayer.Object0.Int();
@@ -82,6 +84,7 @@ public class GameController : MonoBehaviour
                 var obj = new GridObjectSpriteSDGameObject("Tree@" + x + "," + y, itile.Prefab,
                     itile.Offset, TileIndicator);
                 MapManager.SetupObject(new Vector2Int(x, y), treesLayer, obj, new Vector2Int(itile.Size));
+                obj.Sprite.SetParent(mapObject, true);
             }
         }
 
@@ -151,7 +154,7 @@ public class GameController : MonoBehaviour
                         // deselect old object
                         (oldSelectedObject as ISelectable).OnDeselected();
                     }
-                    if (this.LastMouseUpMapObject != null) (this.LastMouseUpMapObject as ISelectable).OnSelected();
+                    if (this.LastMouseUpMapObject != null && this.LastMouseUpMapObject != oldSelectedObject) (this.LastMouseUpMapObject as ISelectable).OnSelected();
                     else if (coords.HasValue) HighlightTile(coords.Value);
                 }
                 else
@@ -176,7 +179,7 @@ public class GameController : MonoBehaviour
         // MOUSE MOVE
         if (Input.GetAxis("Mouse X") != 0 && Input.GetAxis("Mouse Y") != 0 || Input.touchCount == 1 && Input.GetTouch(0).phase == TouchPhase.Moved)
         {
-            
+
             // if mouse button is down it is either camera movement or drag
             if (Input.GetMouseButton(0))
             {
@@ -209,7 +212,7 @@ public class GameController : MonoBehaviour
                         if (!draggable.IsDragged)
                         {
                             draggable.IsDragged = true;
-                            draggable.OnDragStart();
+                            draggable.OnDragStart(coords.Value);
                         }
                         if (coords.HasValue) draggable.OnDragMove(coords.Value);
                     }
