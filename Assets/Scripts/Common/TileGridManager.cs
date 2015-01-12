@@ -36,6 +36,7 @@ namespace IsoEngine1
         public Tile[,] OccupiedTiles;
         public TileGridManager GridManager;
         public EState State { get; set; }
+        public GameObject GameObject;
         public string Name;
 
         public Vector2Int Size
