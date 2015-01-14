@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using IsoEngine1;
 using System.Linq;
+using System;
 
 namespace Dungeon
 {
@@ -17,10 +18,14 @@ namespace Dungeon
     public class GameController : MonoBehaviour
     {
         public AStarPathfinding astar;
+        public MapManager MapManager;
+        public GameObject CharacterController;
+        public bool Shadows = false;
+        float[,] CurrentLightModifiers;
+        float[,] NextLightModifiers;
 
         GameObject PickingPlane;
         GameObject Map;
-        GameObject[,] tileObjects = new GameObject[100, 100];
 
         #region input handling vars
         /*GridObject LastMouseUpMapObject;
@@ -35,21 +40,30 @@ namespace Dungeon
         {
             //Debug.Log("GameController awake");
             astar = new AStarPathfinding();
+            MapManager = new MapManager(new Vector2Int(50, 50), astar);
             PickingPlane = GameObject.Find("PickingPlane");
             Map = GameObject.Find("Map");
             var tiles = Map.GetComponentsInChildren<TileComponent>();
             foreach (var tile in tiles)
             {
                 var coords = tile.transform.position;
-                if (tileObjects[(int)coords.x, (int)coords.z] == null)
+                var c = new Vector2Int(coords.x, coords.z);
+                if (tile.PrefabType == EPrefabType.Tile)
                 {
-                    tileObjects[(int)coords.x, (int)coords.z] = tile.gameObject;
-                }
-                else
-                {
-                    Debug.LogWarning("Duplicate tiles on coords: " + coords.x + "," + coords.z);
+                    var gridobj = new GridObject(tile.gameObject);
+                    try
+                    {
+                        var layer = ETileLayer.Ground0;
+                        if (!tile.IsWalkable) layer = ETileLayer.Object0;
+                        MapManager.SetupObject(c, layer.Int(), gridobj, Vector2Int.One, false);
+                    }
+                    catch (Exception excp)
+                    {
+                        Debug.LogWarning("Duplicate tiles on coords: " + coords.x + "," + coords.z + " " + excp.Message);
+                    }
                 }
             }
+
         }
         // Use this for initialization
         void Start()
@@ -74,18 +88,22 @@ namespace Dungeon
             {
                 Debug.Log("Mouse Up");
                 var coords = GetTilePositionFromMouse(Input.mousePosition);
+                if (coords.HasValue)
+                {
+                    Debug.Log("Mouse pick: " + coords);
+                    HighlightTile(coords.Value);
+                }
             }
-
         }
 
         public Vector2Int? GetTilePositionFromMouse(Vector3 mousePosition)
         {
             RaycastHit hit;
             var ray = Camera.main.ScreenPointToRay(mousePosition);
-            Debug.DrawRay(ray.origin, ray.direction * 10, Color.yellow);
+            Debug.DrawRay(ray.origin, ray.direction * 10, Color.red, 1.0f);
             if (Physics.Raycast(ray, out hit, 100f))
             {
-                if (hit.transform.gameObject == PickingPlane)
+                if (hit.transform.gameObject == MapManager.GridColliderObject)
                 {
                     int x = Mathf.FloorToInt(hit.point.x);
                     int y = Mathf.FloorToInt(hit.point.z);
@@ -111,7 +129,253 @@ namespace Dungeon
             //var tiles = MapManager.SetupObject(coords, ETileLayer.Overlay0.Int(), obj, new Vector2Int(3, 3));
             //var c = Color.green; c.a = .7f;
             //obj.SetColor(c);
-            //CharacterController.SetTargetTile(coords);
+            CharacterController.GetComponent<WalkableComponent>().SetTargetTile(coords);
+        }
+
+        public void UpdateLight(Vector2 currentPosition)
+        {
+            Debug.Log("Update Light");
+            this.CurrentLightModifiers = ComputeLightModifiers(currentPosition);
+            ApplyLightModifiers(this.CurrentLightModifiers);
+        }
+        public void StartLightBlending(Vector2Int nextPosition)
+        {
+            Debug.Log("Start Light Blending");
+            this.NextLightModifiers = ComputeLightModifiers(nextPosition.Vector2);
+            StartCoroutine(LightBlendingCouroutine(CharacterController.GetComponent<CharacterControllerScript>(),
+                nextPosition));
+        }
+
+        IEnumerator LightBlendingCouroutine(CharacterControllerScript character, Vector2Int nextPosition)
+        {
+            float[,] templm = new float[MapManager.SizeX, MapManager.SizeY];
+            Vector3 np = nextPosition.Vector3(EVectorComponents.XZ);
+            float diff = (np - character.transform.position).magnitude;
+            while (diff > 0.02f)
+            {
+                if (this.CurrentLightModifiers != null && this.NextLightModifiers != null)
+                {
+                    templm.ForEach((coords, val) =>
+                    {
+                        var from = this.CurrentLightModifiers[coords.x, coords.y];
+                        var to = this.NextLightModifiers[coords.x, coords.y];
+                        var lerp = Mathf.Lerp(from, to, 1f - diff);
+                        //var lerp = Mathf.InverseLerp(from, to, 0.5f);
+                        templm[coords.x, coords.y] = lerp;
+                    });
+                    ApplyLightModifiers(templm);
+                }
+                diff = (np - character.transform.position).magnitude;
+                yield return null;
+            }
+            this.CurrentLightModifiers = this.NextLightModifiers;
+            this.NextLightModifiers = null;
+        }
+
+        public float[,] ComputeLightModifiers(Vector2 light)
+        {
+            float[,] result = new float[MapManager.SizeX, MapManager.SizeY];
+            MapManager.ForEach((tile) =>
+            {
+                var m = (light - tile.Coordinates.Vector2).magnitude;
+                var lightModifier = 1f;
+                if (m < 8)
+                {
+                    var rayCastTiles = GetIntersectionTiles(new Vector2Int(light), tile.Coordinates);
+                    lightModifier = ProcessIntersectionTiles(rayCastTiles) ? 2.2f : 1f;
+                }
+                else
+                {
+                    lightModifier = 1.8f;
+                }
+                //result[tile.Coordinates.x, tile.Coordinates.y] = lightModifier;
+                result[tile.Coordinates.x, tile.Coordinates.y] = Mathf.Sqrt(m) / 8f * lightModifier;
+            });
+            return result;
+        }
+
+        bool ProcessIntersectionTiles(List<Vector2Int> rayCastTiles)
+        {
+            bool hit = false;
+            foreach (var c in rayCastTiles)
+            {
+                var t = MapManager.GetTile(c);
+                if (t != null)
+                {
+                    foreach (var go in t.GridObjectReferences)
+                    {
+                        if (go != null)
+                        {
+                            /*if (go.GameObject.tag == "Floor")
+                            {
+                                var sprites = go.GameObject.GetComponentsInChildren<SpriteRenderer>();
+                                foreach (var sprite in sprites)
+                                {
+                                    sprite.color = hit ? Color.black: Color.white;
+                                }
+                            }*/
+                            //lightModifiers[t.Coordinates.x, t.Coordinates.y] = hit ? 2f : 1f;
+                            if (go.GameObject.tag == "Wall")
+                            {
+                                hit = true;
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return hit;
+        }
+
+        List<Vector2Int> GetIntersectionTiles(Vector2Int start, Vector2Int end)
+        {
+            var result = new List<Vector2Int>();
+
+            var x0 = start.x;
+            var y0 = start.y;
+            var x1 = end.x;
+            var y1 = end.y;
+            int dx = Mathf.Abs(x1 - x0);
+            int dy = Mathf.Abs(y1 - y0);
+            int x = x0;
+            int y = y0;
+            int n = 1 + dx + dy;
+            int x_inc = (x1 > x0) ? 1 : -1;
+            int y_inc = (y1 > y0) ? 1 : -1;
+            int error = dx - dy;
+            dx *= 2;
+            dy *= 2;
+
+            for (; n > 0; --n)
+            {
+                //visit(x, y);
+                result.Add(new Vector2Int(x, y));
+                if (error > 0)
+                {
+                    x += x_inc;
+                    error -= dy;
+                }
+                else
+                {
+                    y += y_inc;
+                    error += dx;
+                }
+            }
+
+            return result;
+        }
+        List<Vector2Int> GetIntersectionTiles2(Vector2 start, Vector2 end)
+        {
+            var result = new List<Vector2Int>();
+
+            var x0 = start.x;
+            var y0 = start.y;
+            var x1 = end.x;
+            var y1 = end.y;
+            double dx = Mathf.Abs(x1 - x0);
+            double dy = Mathf.Abs(y1 - y0);
+
+            int x = (int)(Mathf.Floor(x0));
+            int y = (int)(Mathf.Floor(y0));
+
+            int n = 1;
+            int x_inc, y_inc;
+            double error;
+
+            if (dx == 0)
+            {
+                x_inc = 0;
+                error = float.PositiveInfinity;
+            }
+            else if (x1 > x0)
+            {
+                x_inc = 1;
+                n += (int)(Mathf.Floor(x1)) - x;
+                error = (Mathf.Floor(x0) + 1 - x0) * dy;
+            }
+            else
+            {
+                x_inc = -1;
+                n += x - (int)(Mathf.Floor(x1));
+                error = (x0 - Mathf.Floor(x0)) * dy;
+            }
+
+            if (dy == 0)
+            {
+                y_inc = 0;
+                error -= float.PositiveInfinity;
+            }
+            else if (y1 > y0)
+            {
+                y_inc = 1;
+                n += (int)(Mathf.Floor(y1)) - y;
+                error -= (Mathf.Floor(y0) + 1 - y0) * dx;
+            }
+            else
+            {
+                y_inc = -1;
+                n += y - (int)(Mathf.Floor(y1));
+                error -= (y0 - Mathf.Floor(y0)) * dx;
+            }
+
+            for (; n > 0; --n)
+            {
+                //visit(x, y);
+                result.Add(new Vector2Int(x, y));
+
+                if (error > 0)
+                {
+                    y += y_inc;
+                    error -= dx;
+                }
+                else
+                {
+                    x += x_inc;
+                    error += dy;
+                }
+            }
+
+            return result;
+        }
+
+        void ApplyLightModifiers(float[,] lightModifiers)
+        {
+            if (this.Shadows)
+            {
+                MapManager.ForEach((tile) =>
+                {
+                    var lm = lightModifiers[tile.Coordinates.x, tile.Coordinates.y];
+                    foreach (var go in tile.GridObjectReferences)
+                    {
+                        if (go != null)
+                        {
+                            var sprites = go.GameObject.GetComponentsInChildren<SpriteRenderer>();
+                            foreach (var sprite in sprites)
+                            {
+
+                                sprite.color = Color.Lerp(Color.white, Color.black, lm);
+                            }
+                        }
+                    }
+                });
+
+                // apply to entities too
+                var entities = GameObject.FindGameObjectsWithTag("Entity");
+                foreach (var entity in entities)
+                {
+                    var coord = new Vector2Int(entity.transform.position, EVectorComponents.XZ);
+                    var lm = lightModifiers[coord.x, coord.y];
+                    var sprites = entity.GetComponentsInChildren<SpriteRenderer>();
+                    foreach (var sprite in sprites)
+                    {
+                        //lm = lm > 0.25f ? Mathf.Pow(lm, 1f / 3f) : lm;
+                        lm = Mathf.Pow(lm, 0.7f);
+                        sprite.color = Color.Lerp(Color.white, Color.black, lm);
+                        // hide entity
+                    }
+
+                }
+            }
         }
 
         #region DEBUG FUNCTIONS

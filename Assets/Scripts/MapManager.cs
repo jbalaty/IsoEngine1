@@ -60,6 +60,7 @@ public class GridObjectSprite : GridObject
     public Transform Prefab;
     public Vector2 Offset;
 
+
     public GridObjectSprite(string name, Transform prefab, Vector2 offset)
     {
         this.Prefab = prefab;
@@ -284,6 +285,7 @@ public class MapManager : TileGridManager
         return GameObject.Instantiate(prefab, position, Quaternion.Euler(45f, 45f, 0f)) as Transform;
     }
 
+
     #region PATHFINDING
 
     public bool IsTileWalkable(Vector2Int coords)
@@ -330,5 +332,6 @@ public class MapManager : TileGridManager
     }
     #endregion
 
+    
 
 }

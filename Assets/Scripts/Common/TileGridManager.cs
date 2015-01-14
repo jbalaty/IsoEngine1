@@ -53,6 +53,13 @@ namespace IsoEngine1
                 return this.OccupiedTiles[0, 0];
             }
         }
+        public GridObject()
+        {
+        }
+        public GridObject(GameObject gobj)
+        {
+            this.GameObject = gobj;
+        }
 
         public virtual void OnSetup()
         {
