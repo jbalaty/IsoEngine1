@@ -230,6 +230,9 @@ namespace IsoEngine1
         public virtual void OnTileAllocated(Tile tile, int layerIndex)
         {
         }
+        public virtual void OnTileDeallocated(Tile tile, int layerIndex)
+        {
+        }
 
         public void ForEach(System.Action<Tile> callback)
         {
@@ -302,7 +305,11 @@ namespace IsoEngine1
                     else throw new Exception("Cannot move object here, there is some object already and overwriting is turned off");
                 }
             }
-            obj.OccupiedTiles.ForEach(tile => tile.GridObjectReferences[obj.LayerIndex] = null);
+            obj.OccupiedTiles.ForEach(tile =>
+            {
+                tile.GridObjectReferences[obj.LayerIndex] = null;
+                OnTileDeallocated(tile, newLayerIndex ?? obj.LayerIndex);
+            });
             var oldLayerIndex = obj.LayerIndex;
             var result = AllocateObject(newCoords, newLayerIndex ?? obj.LayerIndex, obj, obj.Size);
             if (oldLayerIndex != obj.LayerIndex)
@@ -330,7 +337,12 @@ namespace IsoEngine1
 
         public Vector2Int GetRandomTileCoords()
         {
-            return new Vector2Int(UnityEngine.Random.Range(0, this.SizeX), UnityEngine.Random.Range(0, this.SizeY));
+            return GetRandomTileCoords(new Rect(0, 0, this.SizeX, this.SizeY));
+        }
+
+        public Vector2Int GetRandomTileCoords(Rect rect)
+        {
+            return new Vector2Int(UnityEngine.Random.Range((int)rect.xMin, (int)rect.xMax), UnityEngine.Random.Range((int)rect.yMin, (int)rect.yMax));
         }
     }
 

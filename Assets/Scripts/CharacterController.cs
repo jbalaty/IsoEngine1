@@ -9,7 +9,6 @@ namespace IsoEngine1
         public float speed = 0.1f;
         public GameController gameController;
         bool IsMoving = false;
-        IPathFinding PathFinding;
         Vector2Int? TargetTile;
         Path currentPath;
 

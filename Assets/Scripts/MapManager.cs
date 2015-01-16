@@ -37,6 +37,7 @@ public interface IPathfidningAdapter
     void Init(Vector2Int size);
     void SetTile(Vector2Int coords, bool isWalkable);
     Path FindPath(Vector2Int start, Vector2Int end);
+    bool IsTileWalkable(Vector2Int coords);
 }
 
 #region Grid object interfaces
@@ -292,8 +293,9 @@ public class MapManager : TileGridManager
     {
         if (CheckBounds(coords))
         {
-            var tile = this.GetTile(coords);
-            return IsTileWalkableTest(tile);
+            //var tile = this.GetTile(coords);
+            //return IsTileWalkableTest(tile);
+            return PathFinding.IsTileWalkable(coords);
         }
         else
         {
@@ -301,37 +303,61 @@ public class MapManager : TileGridManager
         }
     }
 
-    protected bool IsTileWalkableTest(Tile tile)
+    protected virtual bool IsTileWalkableTest(Tile tile)
     {
         return tile != null && tile.GridObjectReferences[ETileLayer.Object0.Int()] == null;
     }
 
     public Path FindPath(Vector2Int start, Vector2Int end)
     {
-        return PathFinding.FindPath(start, end);
+        if (IsTileWalkable(end))
+        {
+            return PathFinding.FindPath(start, end);
+        }
+        else
+        {
+            return new Path();
+        }
     }
 
     public override void OnTileAllocated(Tile tile, int layerIndex)
     {
         this.PathFinding.SetTile(tile.Coordinates, this.IsTileWalkableTest(tile));
     }
+    public override void OnTileDeallocated(Tile tile, int layerIndex)
+    {
+        this.PathFinding.SetTile(tile.Coordinates, this.IsTileWalkableTest(tile));
+    }
 
-    public Vector2Int? GetRandomWalkableTile(Vector2Int current)
+    public Vector2Int? GetRandomWalkableTile(Vector2Int current, int rectangularRadius = -1)
     {
         Vector2Int? result = null;
         var triesCounter = 0;
-        while (result == null || triesCounter++ < SizeX * SizeY)
+        while (result == null && triesCounter++ < SizeX * SizeY)
         {
-            var rndtile = GetTile(GetRandomTileCoords());
-            if (IsTileWalkableTest(rndtile))
+            Vector2Int coords;
+            if (rectangularRadius < 0)
             {
-                result = rndtile.Coordinates;
+                coords = GetRandomTileCoords();
+            }
+            else
+            {
+                coords = GetRandomTileCoords(new Rect(current.x - rectangularRadius, current.y - rectangularRadius,
+                    2 * rectangularRadius, 2 * rectangularRadius));
+            }
+            if (CheckBounds(coords))
+            {
+                var rndtile = GetTile(coords);
+                if (IsTileWalkableTest(rndtile))
+                {
+                    result = rndtile.Coordinates;
+                }
             }
         }
         return result;
     }
     #endregion
 
-    
+
 
 }

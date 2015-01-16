@@ -7,7 +7,7 @@ namespace Dungeon
     {
         protected GameController GameController;
         // Use this for initialization
-        protected void Start()
+        protected void Awake()
         {
             GameController = GameObject.Find("GameController").GetComponent<GameController>();
 

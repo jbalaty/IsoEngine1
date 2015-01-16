@@ -75,7 +75,7 @@ public class AStarPathfinding : IPathfidningAdapter
         node.X = position.x;
         node.Y = position.y;
         node.IsWall = !isWalkable;
-        grid[position.x, position.y] = node; 
+        grid[position.x, position.y] = node;
         aStar = new MySolver<MyPathNode, System.Object>(grid);
     }
 
@@ -98,5 +98,8 @@ public class AStarPathfinding : IPathfidningAdapter
         return result;
     }
 
-    
+    public bool IsTileWalkable(Vector2Int position)
+    {
+        return grid[position.x, position.y].IsWalkable(null);
+    }
 }

@@ -18,8 +18,9 @@ namespace Dungeon
     public class GameController : MonoBehaviour
     {
         public AStarPathfinding astar;
-        public MapManager MapManager;
-        public GameObject CharacterController;
+        public DungeonMapManager MapManager;
+        EntitiesManager EntitiesManager;
+        public GameObject Player;
         public bool Shadows = false;
         float[,] CurrentLightModifiers;
         float[,] NextLightModifiers;
@@ -36,13 +37,16 @@ namespace Dungeon
          */
         #endregion
 
+        bool _SimulatingTurn = false;
+
         void Awake()
         {
             //Debug.Log("GameController awake");
             astar = new AStarPathfinding();
-            MapManager = new MapManager(new Vector2Int(50, 50), astar);
+            MapManager = new DungeonMapManager(new Vector2Int(50, 50), astar);
             PickingPlane = GameObject.Find("PickingPlane");
             Map = GameObject.Find("Map");
+            EntitiesManager = GameObject.Find("Entities").GetComponent<EntitiesManager>();
             var tiles = Map.GetComponentsInChildren<TileComponent>();
             foreach (var tile in tiles)
             {
@@ -69,6 +73,7 @@ namespace Dungeon
         void Start()
         {
             //Debug.Log("GameController start");
+            NextTurn();
         }
 
         // Update is called once per frame
@@ -86,13 +91,32 @@ namespace Dungeon
             // MOUSE BUTTON UP
             if (Input.GetMouseButtonUp(0))
             {
-                Debug.Log("Mouse Up");
                 var coords = GetTilePositionFromMouse(Input.mousePosition);
                 if (coords.HasValue)
                 {
-                    Debug.Log("Mouse pick: " + coords);
-                    HighlightTile(coords.Value);
+                    //Debug.Log("Mouse pick: " + coords);
+                    var entities = EntitiesManager.GetEntitiesOnPosition(coords.Value);
+                    if (entities.Count == 0)
+                    {
+                        Player.GetComponent<WalkableComponent>().SetTargetTile(coords);
+                        HighlightTile(coords.Value);
+                    }
+                    else
+                    {
+                        var e = entities.First();
+                        if (Player.GetComponent<PlayerController>().Attack(e))
+                        {
+                            NextTurn();
+                        }
+                        //Debug.Log("Attaaaack!!!! " + e.name);
+                    }
                 }
+            }
+            if (Input.GetKeyDown(KeyCode.Space) && !_SimulatingTurn)
+            {
+                //GameTurnStart();
+                //StartCoroutine(SimulateTurn(0.5f));
+                NextTurn();
             }
         }
 
@@ -129,46 +153,51 @@ namespace Dungeon
             //var tiles = MapManager.SetupObject(coords, ETileLayer.Overlay0.Int(), obj, new Vector2Int(3, 3));
             //var c = Color.green; c.a = .7f;
             //obj.SetColor(c);
-            CharacterController.GetComponent<WalkableComponent>().SetTargetTile(coords);
         }
 
         public void UpdateLight(Vector2 currentPosition)
         {
-            Debug.Log("Update Light");
+            //Debug.Log("Update Light");
             this.CurrentLightModifiers = ComputeLightModifiers(currentPosition);
             ApplyLightModifiers(this.CurrentLightModifiers);
         }
         public void StartLightBlending(Vector2Int nextPosition)
         {
-            Debug.Log("Start Light Blending");
+            //Debug.Log("Start Light Blending");
+            StopCoroutine("LightBlendingCouroutine");
             this.NextLightModifiers = ComputeLightModifiers(nextPosition.Vector2);
-            StartCoroutine(LightBlendingCouroutine(CharacterController.GetComponent<CharacterControllerScript>(),
-                nextPosition));
+            //StartCoroutine(LightBlendingCouroutine(CharacterController.GetComponent<CharacterControllerScript>(),
+            //    nextPosition));
+            StartCoroutine("LightBlendingCouroutine", nextPosition);
         }
 
-        IEnumerator LightBlendingCouroutine(CharacterControllerScript character, Vector2Int nextPosition)
+        IEnumerator LightBlendingCouroutine(Vector2Int nextPosition)
         {
-            float[,] templm = new float[MapManager.SizeX, MapManager.SizeY];
+            var character = Player.GetComponent<PlayerController>();
+            //float[,] templm = new float[MapManager.SizeX, MapManager.SizeY];
+            float[,] templm = new float[MapManager.SizeX, MapManager.SizeY];//this.CurrentLightModifiers.Clone() as float[,];
             Vector3 np = nextPosition.Vector3(EVectorComponents.XZ);
             float diff = (np - character.transform.position).magnitude;
             while (diff > 0.02f)
             {
-                if (this.CurrentLightModifiers != null && this.NextLightModifiers != null)
+                //if (this.CurrentLightModifiers != null && this.NextLightModifiers != null)
                 {
-                    templm.ForEach((coords, val) =>
-                    {
-                        var from = this.CurrentLightModifiers[coords.x, coords.y];
-                        var to = this.NextLightModifiers[coords.x, coords.y];
-                        var lerp = Mathf.Lerp(from, to, 1f - diff);
-                        //var lerp = Mathf.InverseLerp(from, to, 0.5f);
-                        templm[coords.x, coords.y] = lerp;
-                    });
+                    for (var x = 0; x < templm.GetLength(0); x++)
+                        for (var y = 0; y < templm.GetLength(1); y++)
+                        //templm.ForEach((coords, val) =>
+                        {
+                            var from = this.CurrentLightModifiers[x, y];
+                            var to = this.NextLightModifiers[x, y];
+                            var lerp = Mathf.Lerp(from, to, 1f - diff);
+                            //var lerp = Mathf.InverseLerp(from, to, 0.5f);
+                            templm[x, y] = lerp;
+                        };
+                    this.CurrentLightModifiers = templm;
                     ApplyLightModifiers(templm);
                 }
                 diff = (np - character.transform.position).magnitude;
                 yield return null;
             }
-            this.CurrentLightModifiers = this.NextLightModifiers;
             this.NextLightModifiers = null;
         }
 
@@ -179,17 +208,19 @@ namespace Dungeon
             {
                 var m = (light - tile.Coordinates.Vector2).magnitude;
                 var lightModifier = 1f;
-                if (m < 8)
+                if (m < 10)
                 {
                     var rayCastTiles = GetIntersectionTiles(new Vector2Int(light), tile.Coordinates);
-                    lightModifier = ProcessIntersectionTiles(rayCastTiles) ? 2.2f : 1f;
+                    lightModifier = ProcessIntersectionTiles(rayCastTiles) ? 4.6f : 1f;
                 }
                 else
                 {
                     lightModifier = 1.8f;
                 }
                 //result[tile.Coordinates.x, tile.Coordinates.y] = lightModifier;
-                result[tile.Coordinates.x, tile.Coordinates.y] = Mathf.Sqrt(m) / 8f * lightModifier;
+                //var v = Mathf.Sqrt(m) / 12f * lightModifier;
+                var v = m / 36f * lightModifier;
+                result[tile.Coordinates.x, tile.Coordinates.y] = v;
             });
             return result;
         }
@@ -376,6 +407,41 @@ namespace Dungeon
 
                 }
             }
+        }
+
+        public void GameTurnStart()
+        {
+            //Debug.Log("GameController - calling GameTurnStart on all Entities");
+            var allEntities = EntitiesManager.gameObject.GetComponentsInChildren<GameLogicComponent>();
+            foreach (var entity in allEntities)
+            {
+                ExecuteEvents.Execute<IGameLogicEntity>(entity.gameObject, null, (x, y) => x.GameTurnStart());
+            }
+        }
+        public void GameTurnEnd()
+        {
+            ApplyLightModifiers(this.CurrentLightModifiers);
+            //Debug.Log("GameController - calling GameTurnEnd on all Entities");
+            var allEntities = EntitiesManager.gameObject.GetComponentsInChildren<GameLogicComponent>();
+            foreach (var entity in allEntities)
+            {
+                ExecuteEvents.Execute<IGameLogicEntity>(entity.gameObject, null, (x, y) => x.GameTurnEnd());
+            }
+        }
+
+        public void NextTurn()
+        {
+            GameTurnEnd();
+            GameTurnStart();
+            StartCoroutine(SimulateTurn(0.5f));
+        }
+
+        IEnumerator SimulateTurn(float secs)
+        {
+            this._SimulatingTurn = true;
+            yield return new WaitForSeconds(secs);
+            GameTurnEnd();
+            this._SimulatingTurn = false;
         }
 
         #region DEBUG FUNCTIONS
