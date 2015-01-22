@@ -9,7 +9,6 @@ namespace Dungeon
     {
         Animator[] AnimControllers;
         protected GameController GameController;
-        protected Movement Movement;
         public Combat Combat;
         [Range(0, 1)]
         public float WalkStandRatio = 0.7f;
@@ -28,10 +27,6 @@ namespace Dungeon
             Movement.MoveStart += Movement_MoveStart;
             Movement.MoveEnd += Movement_MoveEnd;
             AnimControllers = this.GetComponentsInChildren<Animator>();
-            Combat.EntityDead += (v) =>
-            {
-                Movement.MapManager.DestroyObject(v, ETileLayer.Object1.Int());
-            };
         }
 
         /*void Start()

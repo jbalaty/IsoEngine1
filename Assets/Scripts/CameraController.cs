@@ -12,7 +12,7 @@ public class CameraController : MonoBehaviour
     public float MaxZoom = 10;
     public float CameraMovementSpeed = 0.5f;
     public float CameraStartOrthoSize;
-    public GameController GameController;
+    public Dungeon.GameController GameController;
 
 
     // Use this for initialization

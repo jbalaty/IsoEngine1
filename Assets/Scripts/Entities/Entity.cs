@@ -13,11 +13,34 @@ namespace Dungeon
         public EntityAction CurrentAction = Entity.NoAction;
         [SerializeField]
         public EntityAction NextAction = Entity.NoAction;
+        public Movement Movement;
+        public MapProxy MapProxy;
+        public ETileLayer MapLayer = ETileLayer.Object0;
+        [SerializeField]
+        private bool Walkable = false;
+        public bool IsWalkable
+        {
+            get
+            {
+                return MapProxy.IsTileWalkable(this.GetTilePosition());
+            }
+            set
+            {
 
+                //MapProxy.SetTile(MapLayer);
+            }
+        }
+
+        protected void Awake()
+        {
+            Movement = this.GetComponent<Movement>();
+            MapProxy = this.GetComponent<MapProxy>();
+        }
         protected void Start()
         {
             EntitiesManager = GameObject.Find("Entities").GetComponent<EntitiesManager>();
             EntitiesManager.RegisterEntity(this);
+            MapProxy.SetupTile(MapLayer);
         }
 
         void OnDestroy()

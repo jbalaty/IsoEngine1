@@ -17,20 +17,19 @@ namespace Dungeon
         bool _isMoving = false;
         public float speed = 0.5f;
         public bool MovingDone { get { return !_isMoving && (currentPath == null || currentPath.Count == 0); } }
-        DungeonMapManager _mapManager;
-        public DungeonMapManager MapManager
-        {
-            get
-            {
-                //if (_mapManager == null) _mapManager = GameController.MapManager;
-                //return _mapManager;
-                return null;
-            }
-        }
-
+        public MapProxy MapProxy;
+        public Vector2Int StartPosition;
+        public Entity Entity;
         // Use this for initialization
         void Awake()
         {
+            Entity = GetComponent<Entity>();
+            MapProxy = Entity.MapProxy;
+        }
+
+        void Start()
+        {
+            StartPosition = GetTilePosition();
         }
 
         public void DoNextStep()
@@ -50,13 +49,10 @@ namespace Dungeon
                     // follow the path, but check everytime if the tile is really empty
                     var nextposition = currentPath.PopFirst();
                     DebugShowPath(nextposition);
-                    if (currentPath != null && MapManager.IsTileMovement(nextposition))
+                    if (currentPath != null && MapProxy.IsTileWalkable(nextposition))
                     {
-                        // start moving but reserve next tile in map
-                        var thisGO = MapManager.GetObject(GetTilePosition(), ETileLayer.Object1.Int());
-                        if (thisGO == null) throw new Exception(this.gameObject.name + " Alarm - there should be object on layer Object1 and position " + this.GetTilePosition() + " (" + this.name + ")");
-                        MapManager.MoveObject(thisGO, nextposition);
                         //start movement to next tile
+                        MapProxy.MoveObject(nextposition);
                         //Debug.Log ("Moving to next position " + nextposition);
                         if (DirectionChange != null) DirectionChange(nextposition - new Vector2Int(this.transform.position, EVectorComponents.XZ));
                         if (MoveStart != null) MoveStart(nextposition);
@@ -102,7 +98,7 @@ namespace Dungeon
         public void SetTargetTile(Vector2Int? targettile)
         {
             this.TargetTile = targettile;
-            currentPath = MapManager.FindPath(new Vector2Int(this.transform.position, EVectorComponents.XZ), targettile.Value);
+            currentPath = MapProxy.FindPath(targettile.Value);
             if (currentPath != null && currentPath.Count > 0) currentPath.PopFirst();
         }
         public Vector2Int GetTilePosition()
@@ -111,7 +107,7 @@ namespace Dungeon
         }
         public void Wander()
         {
-            var rndcoords = MapManager.GetRandomMovementTile(GetTilePosition());
+            var rndcoords = MapProxy.GetRandomMovementTile(GetTilePosition());
             if (rndcoords.HasValue)
             {
                 SetTargetTile(rndcoords);

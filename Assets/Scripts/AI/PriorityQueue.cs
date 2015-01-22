@@ -20,9 +20,6 @@ using System.Diagnostics;
 
 namespace SettlersEngine
 {
-	
-	
-	
 	internal class PriorityQueue<T> where T : IIndexedObject
 	{
 		protected List<T> InnerList = new List<T>();

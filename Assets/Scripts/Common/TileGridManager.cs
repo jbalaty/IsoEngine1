@@ -106,9 +106,9 @@ namespace IsoEngine1
 
         //	public event ChangeGridHandler ChangeHandler;
 
-        public void Start()
+        protected virtual void Init()
         {
-            Debug.Log("TileGridManager Start");
+            //Debug.Log("TileGridManager Init");
             this.tiles = new Tile[this.SizeX, this.SizeY];
             for (var x = 0; x < this.SizeX; x++)
             {
