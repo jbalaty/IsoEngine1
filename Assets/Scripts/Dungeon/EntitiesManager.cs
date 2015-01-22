@@ -5,63 +5,60 @@ using System.Collections.Generic;
 
 namespace Dungeon
 {
-    public class EntitiesManager : BaseClass
+    public class EntitiesManager : MonoBehaviour
     {
-        public DungeonMapManager MapManager;
         public GameObject Root;
-        new void Awake()
+        List<Entity> AllEntities = new List<Entity>();
+
+        void Awake()
         {
-            base.Awake();
-            SetupExistingEntities();
         }
 
         // Use this for initialization
         void Start()
         {
-            MapManager = GameController.MapManager;
-            var entities = GetAllEntities(true);
-            foreach (var e in entities)
-            {
-                MapManager.SetupObject(new Vector2Int(e.transform.position, EVectorComponents.XZ),
-                    ETileLayer.Object1.Int(), new GridObject(e), Vector2Int.One);
-            }
         }
 
-        IEnumerable<GameObject> GetAllEntities(bool includingPlayers = true)
+        IEnumerable<Entity> GetAllEntities(bool includingPlayers = true)
         {
-            var result = new List<GameObject>();
-            var ents = GameObject.FindGameObjectsWithTag("Entity");
+            var result = new List<Entity>();
+            var ents = this.GetComponentsInChildren<Entity>();
             result.AddRange(ents);
-            if (includingPlayers)
-            {
-                var players = GameObject.FindGameObjectsWithTag("Player");
-                result.AddRange(players);
-            }
             return result;
-        }
-
-        // Update is called once per frame
-        void Update()
-        {
-
         }
 
         public void SetupExistingEntities()
         {
+            AllEntities.Clear();
+            foreach (var e in AllEntities)
+            {
+                RegisterEntity(e);
 
+            }
         }
 
-        public GameObject SpawnEntity(Transform prefab, Vector2Int position)
+        public void RegisterEntity(Entity entity)
+        {
+            if (!AllEntities.Contains(entity))
+            {
+                AllEntities.Add(entity);
+            }
+        }
+        public void DeregisterEntity(Entity e)
+        {
+            AllEntities.Remove(e);
+        }
+        /*public GameObject SpawnEntity(Transform prefab, Vector2Int position)
         {
             var newEntity = GameObject.Instantiate(prefab, position.Vector3(EVectorComponents.XZ), Quaternion.Euler(60f, 0f, 0f)) as Transform;
             newEntity.transform.SetParent(this.transform);
-            MapManager.SetupObject(position, ETileLayer.Object1.Int(), new GridObject(newEntity.gameObject), Vector2Int.One);
+            RegisterEntity(newEntity.GetComponent<Entity>());
             return newEntity.gameObject;
-        }
+        }*/
 
-        public List<GameObject> GetEntitiesOnPosition(Vector2Int coords)
+        public List<Entity> GetEntitiesOnPosition(Vector2Int coords)
         {
-            var result = new List<GameObject>();
+            var result = new List<Entity>();
             foreach (var e in GetAllEntities())
             {
                 if (new Vector2Int(e.transform.position, EVectorComponents.XZ) == coords)
@@ -71,6 +68,28 @@ namespace Dungeon
             }
             return result;
         }
+        
 
+        public void PlanAllEntitiesAction()
+        {
+            foreach (var e in AllEntities)
+            {
+                e.PlanNextAction();
+            }
+
+            //var allEntities = EntitiesManager.gameObject.GetComponentsInChildren<GameLogicComponent>();
+            //foreach (var entity in allEntities)
+            //{
+            //    ExecuteEvents.Execute<IGameLogicEntity>(entity.gameObject, null, (x, y) => x.GameTurnEnd());
+            //}
+        }
+
+        public void ProcessAllEntitiesAction()
+        {
+            foreach (var e in AllEntities)
+            {
+                e.ProcessNextAction();
+            }
+        }
     }
 }

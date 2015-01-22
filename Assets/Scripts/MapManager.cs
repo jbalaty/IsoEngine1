@@ -35,9 +35,9 @@ public static class ETileLayerExtensions
 public interface IPathfidningAdapter
 {
     void Init(Vector2Int size);
-    void SetTile(Vector2Int coords, bool isWalkable);
+    void SetTile(Vector2Int coords, bool isMovement);
     Path FindPath(Vector2Int start, Vector2Int end);
-    bool IsTileWalkable(Vector2Int coords);
+    bool IsTileMovement(Vector2Int coords);
 }
 
 #region Grid object interfaces
@@ -274,11 +274,10 @@ public class MapManager : TileGridManager
 {
     public IPathfidningAdapter PathFinding;
 
-    public MapManager(Vector2Int size, IPathfidningAdapter pathfinding)
-        : base(size)
+    public void Setup(IPathfidningAdapter pathfinding)
     {
         this.PathFinding = pathfinding;
-        PathFinding.Init(size);
+        PathFinding.Init(this.Size);
     }
 
     public static Transform InstantiatePrefab(Transform prefab, Vector3 position)
@@ -289,13 +288,13 @@ public class MapManager : TileGridManager
 
     #region PATHFINDING
 
-    public bool IsTileWalkable(Vector2Int coords)
+    public bool IsTileMovement(Vector2Int coords)
     {
         if (CheckBounds(coords))
         {
             //var tile = this.GetTile(coords);
-            //return IsTileWalkableTest(tile);
-            return PathFinding.IsTileWalkable(coords);
+            //return IsTileMovementTest(tile);
+            return PathFinding.IsTileMovement(coords);
         }
         else
         {
@@ -303,33 +302,26 @@ public class MapManager : TileGridManager
         }
     }
 
-    protected virtual bool IsTileWalkableTest(Tile tile)
+    protected virtual bool IsTileMovementTest(Tile tile)
     {
         return tile != null && tile.GridObjectReferences[ETileLayer.Object0.Int()] == null;
     }
 
     public Path FindPath(Vector2Int start, Vector2Int end)
     {
-        if (IsTileWalkable(end))
-        {
-            return PathFinding.FindPath(start, end);
-        }
-        else
-        {
-            return new Path();
-        }
+        return PathFinding.FindPath(start, end);
     }
 
     public override void OnTileAllocated(Tile tile, int layerIndex)
     {
-        this.PathFinding.SetTile(tile.Coordinates, this.IsTileWalkableTest(tile));
+        this.PathFinding.SetTile(tile.Coordinates, this.IsTileMovementTest(tile));
     }
     public override void OnTileDeallocated(Tile tile, int layerIndex)
     {
-        this.PathFinding.SetTile(tile.Coordinates, this.IsTileWalkableTest(tile));
+        this.PathFinding.SetTile(tile.Coordinates, this.IsTileMovementTest(tile));
     }
 
-    public Vector2Int? GetRandomWalkableTile(Vector2Int current, int rectangularRadius = -1)
+    public Vector2Int? GetRandomMovementTile(Vector2Int current, int rectangularRadius = -1)
     {
         Vector2Int? result = null;
         var triesCounter = 0;
@@ -348,7 +340,7 @@ public class MapManager : TileGridManager
             if (CheckBounds(coords))
             {
                 var rndtile = GetTile(coords);
-                if (IsTileWalkableTest(rndtile))
+                if (IsTileMovementTest(rndtile))
                 {
                     result = rndtile.Coordinates;
                 }

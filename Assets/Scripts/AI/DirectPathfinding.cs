@@ -6,7 +6,7 @@ using IsoEngine1;
 
 public interface IPathFinding
 {
-//	void Init(System.Func<Vector2Int, bool> walkableCallback);
+//	void Init(System.Func<Vector2Int, bool> MovementCallback);
 	Path PlanPath (Vector2Int startTile, Vector2Int? endTile);
 }
 
@@ -17,10 +17,10 @@ public class DirectPathfinding : IPathFinding
 	public Vector2Int? TargetTilePosition;
 //	public Vector2Int? NextTilePosition;
 	public Vector2Int CurrentTilePosition;
-	System.Func<Vector2Int, bool> WalkableCallback;
+	System.Func<Vector2Int, bool> MovementCallback;
 
-	public DirectPathfinding(System.Func<Vector2Int, bool> walkableCallback){
-		this.WalkableCallback = walkableCallback;
+	public DirectPathfinding(System.Func<Vector2Int, bool> MovementCallback){
+		this.MovementCallback = MovementCallback;
 	}
 
 	public Path PlanPath (Vector2Int currentTile, Vector2Int? targetTile)
@@ -54,7 +54,7 @@ public class DirectPathfinding : IPathFinding
 			// this is needed for the algorithm to work in every direction
 			var newPosition = CurrentTilePosition.Vector2 + new Vector2 (0.5f, 0.5f) + direction;
 			var nextposition = new Vector2Int (newPosition);
-			if ( this.WalkableCallback(nextposition)) {
+			if ( this.MovementCallback(nextposition)) {
 				CurrentTilePosition = nextposition;
 				return nextposition;
 			} else {

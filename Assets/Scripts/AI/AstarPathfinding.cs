@@ -69,12 +69,12 @@ public class AStarPathfinding : IPathfidningAdapter
         aStar = new MySolver<MyPathNode, System.Object>(grid);
     }
 
-    public void SetTile(Vector2Int position, bool isWalkable)
+    public void SetTile(Vector2Int position, bool isMovement)
     {
         var node = new MyPathNode();
         node.X = position.x;
         node.Y = position.y;
-        node.IsWall = !isWalkable;
+        node.IsWall = !isMovement;
         grid[position.x, position.y] = node;
         aStar = new MySolver<MyPathNode, System.Object>(grid);
     }
@@ -98,8 +98,8 @@ public class AStarPathfinding : IPathfidningAdapter
         return result;
     }
 
-    public bool IsTileWalkable(Vector2Int position)
+    public bool IsTileMovement(Vector2Int position)
     {
-        return grid[position.x, position.y].IsWalkable(null);
+        return grid[position.x, position.y].IsMovement(null);
     }
 }

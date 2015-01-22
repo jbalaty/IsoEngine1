@@ -32,7 +32,7 @@ namespace SettlersEngine
 {
 	public interface IPathNode<TUserContext>
 	{
-		Boolean IsWalkable(TUserContext inContext);
+		Boolean IsMovement(TUserContext inContext);
 	}
 	
 	public interface IIndexedObject
@@ -66,9 +66,9 @@ namespace SettlersEngine
 			public Double F { get; internal set; }
 			public int Index { get; set; }
 			
-			public Boolean IsWalkable(TUserContext inContext)
+			public Boolean IsMovement(TUserContext inContext)
 			{
-				return UserContext.IsWalkable(inContext);
+				return UserContext.IsMovement(inContext);
 			}
 			
 			public int X { get; internal set; }
@@ -142,7 +142,7 @@ namespace SettlersEngine
 		
 		/// <summary>
 		/// Returns null, if no path is found. Start- and End-Node are included in returned path. The user context
-		/// is passed to IsWalkable().
+		/// is passed to IsMovement().
 		/// </summary>
 		public LinkedList<TPathNode> Search(Vector2 inStartNode, Vector2 inEndNode, TUserContext inUserContext)
 		{
@@ -212,7 +212,7 @@ namespace SettlersEngine
 					if (y == null)
 						continue;
 					
-					if (!y.UserContext.IsWalkable(inUserContext))
+					if (!y.UserContext.IsMovement(inUserContext))
 						continue;
 					
 					if (m_ClosedSet.Contains(y))

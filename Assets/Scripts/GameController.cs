@@ -102,7 +102,7 @@ public class GameController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //DebugHighlightNotWalkableTiles(true);
+        //DebugHighlightNotMovementTiles(true);
 
         //UpdateInputTouch();
 
@@ -222,7 +222,7 @@ public class GameController : MonoBehaviour
         // INPUT KEYS
         if (Input.GetKeyUp(KeyCode.Space))
         {
-            DebugHighlightNotWalkableTiles(true);
+            DebugHighlightNotMovementTiles(true);
         }
 
         foreach (var uie in IngameUIElements)
@@ -309,7 +309,7 @@ public class GameController : MonoBehaviour
     }
     public void HighlightTile(Vector2Int coords)
     {
-        //DebugHighlightNotWalkableTiles(true);
+        //DebugHighlightNotMovementTiles(true);
         //var obj = new GridObjectMultiSprite("SelectedTileIndicator", TileIndicator, Vector2.zero);
         //var tiles = MapManager.SetupObject(coords, ETileLayer.Overlay0.Int(), obj, new Vector2Int(3, 3));
         //var c = Color.green; c.a = .7f;
@@ -319,12 +319,12 @@ public class GameController : MonoBehaviour
     }
 
     #region DEBUG FUNCTIONS
-    public void DebugHighlightNotWalkableTiles(bool highlight)
+    public void DebugHighlightNotMovementTiles(bool highlight)
     {
 
         MapManager.GenerateAllCoords(Vector2Int.Zero, MapManager.Size).ForEach(vec =>
         {
-            /*if (!astar.GetNode(vec).IsWalkable(null))
+            /*if (!astar.GetNode(vec).IsMovement(null))
             {
                 var tile = MapManager.GetTile(vec);
                 foreach (var o in tile.GridObjectReferences)

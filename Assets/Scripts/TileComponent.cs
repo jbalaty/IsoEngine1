@@ -8,7 +8,7 @@ public enum EPrefabType {
 public class TileComponent : MonoBehaviour {
 
     public EPrefabType PrefabType = EPrefabType.Tile;
-    public bool IsWalkable = true;
+    public bool IsMovement = true;
     public bool IsFlyable = true;
     
 

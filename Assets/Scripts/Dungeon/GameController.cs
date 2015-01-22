@@ -43,7 +43,7 @@ namespace Dungeon
         {
             //Debug.Log("GameController awake");
             astar = new AStarPathfinding();
-            MapManager = new DungeonMapManager(new Vector2Int(50, 50), astar);
+            //MapManager = new DungeonMapManager(new Vector2Int(50, 50), astar);
             PickingPlane = GameObject.Find("PickingPlane");
             Map = GameObject.Find("Map");
             EntitiesManager = GameObject.Find("Entities").GetComponent<EntitiesManager>();
@@ -58,7 +58,7 @@ namespace Dungeon
                     try
                     {
                         var layer = ETileLayer.Ground0;
-                        if (!tile.IsWalkable) layer = ETileLayer.Object0;
+                        if (!tile.IsMovement) layer = ETileLayer.Object0;
                         MapManager.SetupObject(c, layer.Int(), gridobj, Vector2Int.One, false);
                     }
                     catch (Exception excp)
@@ -73,13 +73,13 @@ namespace Dungeon
         void Start()
         {
             //Debug.Log("GameController start");
-            NextTurn();
+            EntitiesManager.SetupExistingEntities();
         }
 
         // Update is called once per frame
         void Update()
         {
-            //DebugHighlightNotWalkableTiles(true);
+            DebugHighlightNotMovementTiles(true);
             //UpdateInputTouch();
             // if mouseDown is on GUI do nothing (GUI will handle that)
             // if mouseUp is on GUI do nothing
@@ -98,15 +98,24 @@ namespace Dungeon
                     var entities = EntitiesManager.GetEntitiesOnPosition(coords.Value);
                     if (entities.Count == 0)
                     {
-                        Player.GetComponent<WalkableComponent>().SetTargetTile(coords);
+                        //Player.GetComponent<MovementComponent>().SetTargetTile(coords);
+                        Player.GetComponent<PlayerController>().MoveTo(coords.Value);
                         HighlightTile(coords.Value);
+                        NextTurn();
                     }
                     else
                     {
                         var e = entities.First();
-                        if (Player.GetComponent<PlayerController>().Attack(e))
+                        if (Player.GetComponent<Combat>().CanAttack(e.GetComponent<Combat>()))
                         {
+                            Player.GetComponent<Combat>().Attack(e.GetComponent<Combat>());
                             NextTurn();
+                        }
+                        else if (e.GetComponent<ObjectComponent>() != null
+                            && e.GetComponent<ObjectComponent>().CanInteract(Player.GetComponent<Entity>()))
+                        {
+                            e.GetComponent<ObjectComponent>().Interact(Player.GetComponent<Entity>());
+                            //NextTurn();
                         }
                         //Debug.Log("Attaaaack!!!! " + e.name);
                     }
@@ -114,8 +123,6 @@ namespace Dungeon
             }
             if (Input.GetKeyDown(KeyCode.Space) && !_SimulatingTurn)
             {
-                //GameTurnStart();
-                //StartCoroutine(SimulateTurn(0.5f));
                 NextTurn();
             }
         }
@@ -148,13 +155,13 @@ namespace Dungeon
 
         public void HighlightTile(Vector2Int coords)
         {
-            //DebugHighlightNotWalkableTiles(true);
+            //DebugHighlightNotMovementTiles(true);
             //var obj = new GridObjectMultiSprite("SelectedTileIndicator", TileIndicator, Vector2.zero);
             //var tiles = MapManager.SetupObject(coords, ETileLayer.Overlay0.Int(), obj, new Vector2Int(3, 3));
             //var c = Color.green; c.a = .7f;
             //obj.SetColor(c);
         }
-
+        #region Light/Shadow procedures
         public void UpdateLight(Vector2 currentPosition)
         {
             //Debug.Log("Update Light");
@@ -170,7 +177,6 @@ namespace Dungeon
             //    nextPosition));
             StartCoroutine("LightBlendingCouroutine", nextPosition);
         }
-
         IEnumerator LightBlendingCouroutine(Vector2Int nextPosition)
         {
             var character = Player.GetComponent<PlayerController>();
@@ -200,7 +206,6 @@ namespace Dungeon
             }
             this.NextLightModifiers = null;
         }
-
         public float[,] ComputeLightModifiers(Vector2 light)
         {
             float[,] result = new float[MapManager.SizeX, MapManager.SizeY];
@@ -208,10 +213,10 @@ namespace Dungeon
             {
                 var m = (light - tile.Coordinates.Vector2).magnitude;
                 var lightModifier = 1f;
-                if (m < 10)
+                if (m < 12)
                 {
                     var rayCastTiles = GetIntersectionTiles(new Vector2Int(light), tile.Coordinates);
-                    lightModifier = ProcessIntersectionTiles(rayCastTiles) ? 4.6f : 1f;
+                    lightModifier = ProcessIntersectionTiles(rayCastTiles) ? 4.6f : 0.8f;
                 }
                 else
                 {
@@ -224,10 +229,10 @@ namespace Dungeon
             });
             return result;
         }
-
         bool ProcessIntersectionTiles(List<Vector2Int> rayCastTiles)
         {
             bool hit = false;
+            var counter = 0;
             foreach (var c in rayCastTiles)
             {
                 var t = MapManager.GetTile(c);
@@ -246,7 +251,8 @@ namespace Dungeon
                                 }
                             }*/
                             //lightModifiers[t.Coordinates.x, t.Coordinates.y] = hit ? 2f : 1f;
-                            if (go.GameObject.tag == "Wall")
+                            if (go.GameObject.tag == "Wall"
+                                && counter < rayCastTiles.Count() - 1) // last tile cannot cast shadow on itself
                             {
                                 hit = true;
                                 return true;
@@ -254,10 +260,10 @@ namespace Dungeon
                         }
                     }
                 }
+                counter++;
             }
             return hit;
         }
-
         List<Vector2Int> GetIntersectionTiles(Vector2Int start, Vector2Int end)
         {
             var result = new List<Vector2Int>();
@@ -295,80 +301,6 @@ namespace Dungeon
 
             return result;
         }
-        List<Vector2Int> GetIntersectionTiles2(Vector2 start, Vector2 end)
-        {
-            var result = new List<Vector2Int>();
-
-            var x0 = start.x;
-            var y0 = start.y;
-            var x1 = end.x;
-            var y1 = end.y;
-            double dx = Mathf.Abs(x1 - x0);
-            double dy = Mathf.Abs(y1 - y0);
-
-            int x = (int)(Mathf.Floor(x0));
-            int y = (int)(Mathf.Floor(y0));
-
-            int n = 1;
-            int x_inc, y_inc;
-            double error;
-
-            if (dx == 0)
-            {
-                x_inc = 0;
-                error = float.PositiveInfinity;
-            }
-            else if (x1 > x0)
-            {
-                x_inc = 1;
-                n += (int)(Mathf.Floor(x1)) - x;
-                error = (Mathf.Floor(x0) + 1 - x0) * dy;
-            }
-            else
-            {
-                x_inc = -1;
-                n += x - (int)(Mathf.Floor(x1));
-                error = (x0 - Mathf.Floor(x0)) * dy;
-            }
-
-            if (dy == 0)
-            {
-                y_inc = 0;
-                error -= float.PositiveInfinity;
-            }
-            else if (y1 > y0)
-            {
-                y_inc = 1;
-                n += (int)(Mathf.Floor(y1)) - y;
-                error -= (Mathf.Floor(y0) + 1 - y0) * dx;
-            }
-            else
-            {
-                y_inc = -1;
-                n += y - (int)(Mathf.Floor(y1));
-                error -= (y0 - Mathf.Floor(y0)) * dx;
-            }
-
-            for (; n > 0; --n)
-            {
-                //visit(x, y);
-                result.Add(new Vector2Int(x, y));
-
-                if (error > 0)
-                {
-                    y += y_inc;
-                    error -= dx;
-                }
-                else
-                {
-                    x += x_inc;
-                    error += dy;
-                }
-            }
-
-            return result;
-        }
-
         void ApplyLightModifiers(float[,] lightModifiers)
         {
             if (this.Shadows)
@@ -408,45 +340,32 @@ namespace Dungeon
                 }
             }
         }
-
-        public void GameTurnStart()
-        {
-            //Debug.Log("GameController - calling GameTurnStart on all Entities");
-            var allEntities = EntitiesManager.gameObject.GetComponentsInChildren<GameLogicComponent>();
-            foreach (var entity in allEntities)
-            {
-                ExecuteEvents.Execute<IGameLogicEntity>(entity.gameObject, null, (x, y) => x.GameTurnStart());
-            }
-        }
-        public void GameTurnEnd()
-        {
-            ApplyLightModifiers(this.CurrentLightModifiers);
-            //Debug.Log("GameController - calling GameTurnEnd on all Entities");
-            var allEntities = EntitiesManager.gameObject.GetComponentsInChildren<GameLogicComponent>();
-            foreach (var entity in allEntities)
-            {
-                ExecuteEvents.Execute<IGameLogicEntity>(entity.gameObject, null, (x, y) => x.GameTurnEnd());
-            }
-        }
+        #endregion
 
         public void NextTurn()
         {
-            GameTurnEnd();
-            GameTurnStart();
-            StartCoroutine(SimulateTurn(0.5f));
-        }
-
-        IEnumerator SimulateTurn(float secs)
-        {
-            this._SimulatingTurn = true;
-            yield return new WaitForSeconds(secs);
-            GameTurnEnd();
-            this._SimulatingTurn = false;
+            EntitiesManager.PlanAllEntitiesAction();
+            EntitiesManager.ProcessAllEntitiesAction();
         }
 
         #region DEBUG FUNCTIONS
-        public void DebugHighlightNotWalkableTiles(bool highlight)
+        public void DebugHighlightNotMovementTiles(bool highlight)
         {
+            MapManager.ForEach((tile) =>
+            {
+                if (tile != null)
+                {
+                    var Movement = MapManager.IsTileMovement(tile.Coordinates);
+                    var o = tile.GridObjectReferences[ETileLayer.Ground0.Int()];
+                    if (o != null)
+                    {
+                        foreach (var s in o.GameObject.GetComponentsInChildren<SpriteRenderer>())
+                        {
+                            s.color = Movement ? Color.white : Color.red;
+                        }
+                    }
+                }
+            });
         }
         #endregion
     }

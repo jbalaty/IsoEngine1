@@ -90,7 +90,7 @@ namespace IsoEngine1
     }
 
     [System.Serializable]
-    public class TileGridManager
+    public class TileGridManager : MonoBehaviour
     {
         public int SizeX = 0;
         public int SizeY = 0;
@@ -106,11 +106,9 @@ namespace IsoEngine1
 
         //	public event ChangeGridHandler ChangeHandler;
 
-        public TileGridManager(Vector2Int size)
+        public void Start()
         {
-            Debug.Log("TileGridManager constructor");
-            this.SizeX = (int)size.x;
-            this.SizeY = (int)size.y;
+            Debug.Log("TileGridManager Start");
             this.tiles = new Tile[this.SizeX, this.SizeY];
             for (var x = 0; x < this.SizeX; x++)
             {
@@ -122,12 +120,15 @@ namespace IsoEngine1
             }
 
             // create Quad for detecting click events
-            var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            quad.transform.position = new Vector3(this.SizeX / 2f, 0f, this.SizeY / 2f);
-            quad.transform.Rotate(new Vector3(90, 0, 0));
-            quad.transform.localScale = new Vector3(this.SizeX, this.SizeY, 0f);
-            quad.GetComponent<MeshRenderer>().enabled = false;
-            this.GridColliderObject = quad;
+            if (this.GridColliderObject == null)
+            {
+                var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                quad.transform.position = new Vector3(this.SizeX / 2f, 0f, this.SizeY / 2f);
+                quad.transform.Rotate(new Vector3(90, 0, 0));
+                quad.transform.localScale = new Vector3(this.SizeX, this.SizeY, 0f);
+                quad.GetComponent<MeshRenderer>().enabled = false;
+                this.GridColliderObject = quad;
+            }
         }
 
         public Tile GetTile(Vector2Int coords)
@@ -177,6 +178,7 @@ namespace IsoEngine1
                 obj.OccupiedTiles.ForEach(tile =>
                 {
                     tile.GridObjectReferences[obj.LayerIndex] = null;
+                    OnTileDeallocated(tile, obj.LayerIndex);
                 });
                 obj.OnDestroy();
                 obj.State = GridObject.EState.Destroyed;

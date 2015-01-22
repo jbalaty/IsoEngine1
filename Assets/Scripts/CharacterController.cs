@@ -50,7 +50,7 @@ namespace IsoEngine1
                         prev = n;
                     }
                     // DEBUG END
-                    if (currentPath != null && gameController.MapManager.IsTileWalkable(nextposition))
+                    if (currentPath != null && gameController.MapManager.IsTileMovement(nextposition))
                     {
                         //start movement to next tile
                         //						Debug.Log ("Moving to next position " + nextposition);
@@ -126,7 +126,7 @@ namespace IsoEngine1
 
         public void Wander()
         {
-            var rndcoords = gameController.MapManager.GetRandomWalkableTile(GetTilePosition());
+            var rndcoords = gameController.MapManager.GetRandomMovementTile(GetTilePosition());
             if (rndcoords.HasValue)
             {
                 SetTargetTile(rndcoords);

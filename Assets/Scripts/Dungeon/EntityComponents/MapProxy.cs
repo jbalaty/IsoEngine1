@@ -3,18 +3,22 @@ using System.Collections;
 
 namespace Dungeon
 {
-    public class BaseClass : MonoBehaviour
+    public class MapProxy : MonoBehaviour
     {
-        protected GameController GameController;
+
         // Use this for initialization
-        protected void Awake()
+        void Start()
         {
-            GameController = GameObject.Find("GameController").GetComponent<GameController>();
 
         }
 
         // Update is called once per frame
         void Update()
+        {
+
+        }
+
+        public void SetTile(Entity e)
         {
 
         }
