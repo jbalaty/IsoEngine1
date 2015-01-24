@@ -14,8 +14,9 @@ namespace Dungeon
         bool _lastIsIdle = true;
         EntityAction UserAction;
         // Use this for initialization
-        void Awake()
+        new void Awake()
         {
+            base.Awake();
             AnimControllers = this.GetComponentsInChildren<Animator>();
             Combat = this.GetComponent<Combat>();
             Movement.StateChange += Movement_StateChange;
@@ -97,7 +98,7 @@ namespace Dungeon
         }
         #endregion
 
-        
+
         void SetDirection(int dir)
         {
             foreach (Animator ac in AnimControllers)

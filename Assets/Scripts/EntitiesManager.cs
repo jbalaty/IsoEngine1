@@ -8,7 +8,7 @@ namespace Dungeon
     public class EntitiesManager : MonoBehaviour
     {
         public GameObject Root;
-        List<Entity> AllEntities = new List<Entity>();
+        public List<Entity> AllEntities = new List<Entity>();
 
         void Awake()
         {

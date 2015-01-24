@@ -3,8 +3,62 @@ using System.Collections;
 using System;
 using IsoEngine1;
 
+/// <summary>
+/// Info of entity trying to find path
+/// </summary>
+public class PathFinderInfo
+{
+    public bool FindWalkingPath = true;
+    public bool FindFlyPath = false;
+    public bool IgnoreEntities = true;
+    public Dungeon.Entity Entity = null;
+    public Dungeon.EntitiesManager EntitiesManager = null;
 
+    public PathFinderInfo()
+    {
 
+    }
+    public PathFinderInfo(bool ignoreOthers, Dungeon.EntitiesManager em, Dungeon.Entity e)
+    {
+        this.IgnoreEntities = ignoreOthers;
+        this.EntitiesManager = em;
+        this.Entity = e;
+    }
+}
+
+/// <summary>
+/// Info about node in graph
+/// </summary>
+public class MyPathNode : SettlersEngine.IPathNode<PathFinderInfo>
+{
+    public Int32 X;
+    public Int32 Y;
+    public bool NodeIsWalkable;
+    public bool NodeIsFlyable;
+
+    public bool IsWalkable(PathFinderInfo pathfinderinfo)
+    {
+        var result = true;
+        if (pathfinderinfo.FindWalkingPath && !NodeIsWalkable)
+        {
+            result = false;
+        }
+        else if (pathfinderinfo.FindFlyPath && !NodeIsFlyable)
+        {
+            result = false;
+        }
+        else if (!pathfinderinfo.IgnoreEntities)
+        {
+            if (pathfinderinfo.EntitiesManager == null) throw new Exception("Entities manager should not be null");
+            if (pathfinderinfo.EntitiesManager.AllEntities.Count > 0)
+            {
+                var ents = pathfinderinfo.EntitiesManager.GetEntitiesOnPosition(new Vector2Int(X, Y));
+                result = ents.Count == 0;
+            }
+        }
+        return result;
+    }
+}
 
 public class AStarPathfinding : IPathfidningAdapter
 {
@@ -28,10 +82,9 @@ public class AStarPathfinding : IPathfidningAdapter
                 return Math.Min(dx, dy); //Diagonal distance
 
             else if (formula == 3)
-                return (dx * dy) + (dx + dy); //Manhatten distance
+                return (dx + dy); //Manhatten distance
             else
-                return Math.Abs(inStart.X - inEnd.X) + Math.Abs(inStart.Y - inEnd.Y);
-
+                throw new Exception("No pathfinding heuristic selected");
             //return 1*(Math.Abs(inStart.X - inEnd.X) + Math.Abs(inStart.Y - inEnd.Y) - 1); //optimized tile based Manhatten
             //return ((dx * dx) + (dy * dy)); //Khawaja distance
         }
@@ -47,7 +100,7 @@ public class AStarPathfinding : IPathfidningAdapter
         }
     }
 
-    MySolver<MyPathNode, System.Object> aStar;
+    MySolver<MyPathNode, PathFinderInfo> aStar;
     MyPathNode[,] grid;
 
     public AStarPathfinding()
@@ -66,17 +119,19 @@ public class AStarPathfinding : IPathfidningAdapter
                 grid[x, y].Y = y;
             }
         }
-        aStar = new MySolver<MyPathNode, System.Object>(grid);
+        aStar = new MySolver<MyPathNode, PathFinderInfo>(grid);
     }
 
-    public void SetTile(Vector2Int position, bool isMovement)
+    public void SetTile(Vector2Int position, bool? isWalkable, bool? isFlyable)
     {
-        var node = new MyPathNode();
-        node.X = position.x;
-        node.Y = position.y;
-        node.IsWalkable = isMovement;
-        grid[position.x, position.y] = node;
-        aStar = new MySolver<MyPathNode, System.Object>(grid);
+        var node = grid[position.x, position.y];
+        node.NodeIsWalkable = isWalkable ?? node.NodeIsWalkable;
+        node.NodeIsFlyable = isFlyable ?? node.NodeIsFlyable;
+        if (typeof(MyPathNode).IsValueType)
+        {
+            grid[position.x, position.y] = node;
+        }
+        aStar = new MySolver<MyPathNode, PathFinderInfo>(grid);
     }
 
     public MyPathNode GetNode(Vector2Int position)
@@ -84,9 +139,10 @@ public class AStarPathfinding : IPathfidningAdapter
         return grid[position.x, position.y];
     }
 
-    public Path FindPath(Vector2Int start, Vector2Int end)
+    public Path FindPath(Vector2Int start, Vector2Int end, PathFinderInfo pathFinderInfo = null)
     {
-        var path = aStar.Search(start.Vector2, end.Vector2, null);
+        pathFinderInfo = pathFinderInfo ?? new PathFinderInfo();
+        var path = aStar.Search(start, end, pathFinderInfo);
         var result = new Path();
         if (path != null)
         {
@@ -100,6 +156,6 @@ public class AStarPathfinding : IPathfidningAdapter
 
     public bool IsTileWalkable(Vector2Int position)
     {
-        return grid[position.x, position.y].IsMovement(null);
+        return grid[position.x, position.y].IsWalkable(new PathFinderInfo());
     }
 }

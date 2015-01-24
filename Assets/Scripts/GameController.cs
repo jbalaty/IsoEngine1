@@ -42,6 +42,12 @@ namespace Dungeon
             EntitiesManager = GameObject.Find("Entities").GetComponent<EntitiesManager>();
             MapObject = GameObject.Find("Map");
             MapManager = MapObject.GetComponent<DungeonMapManager>();
+        }
+        // Use this for initialization
+        void Start()
+        {
+            //Debug.Log("GameController start");
+            EntitiesManager.SetupExistingEntities();
             var tiles = MapObject.GetComponentsInChildren<TileComponent>();
             foreach (var tile in tiles)
             {
@@ -53,28 +59,22 @@ namespace Dungeon
                     try
                     {
                         var layer = ETileLayer.Ground0;
-                        if (!tile.IsWalkable) layer = ETileLayer.Object0;
+                        if (!tile.IsWalkable) layer = ETileLayer.Ground1;
                         MapManager.SetupObject(c, layer.Int(), gridobj, Vector2Int.One, false);
                     }
-                    catch //(Exception excp)
+                    catch (Exception excp)
                     {
                         Debug.LogWarning("Duplicate tiles on coords: " + coords.x + "," + coords.z);
+                        Debug.LogException(excp);
                     }
                 }
             }
-
-        }
-        // Use this for initialization
-        void Start()
-        {
-            //Debug.Log("GameController start");
-            EntitiesManager.SetupExistingEntities();
         }
 
         // Update is called once per frame
         void Update()
         {
-            DebugHighlightNotMovementTiles(true);
+            DebugHighlightNotWalkableTiles(true);
             //UpdateInputTouch();
             // if mouseDown is on GUI do nothing (GUI will handle that)
             // if mouseUp is on GUI do nothing
@@ -165,19 +165,22 @@ namespace Dungeon
         }
 
         #region DEBUG FUNCTIONS
-        public void DebugHighlightNotMovementTiles(bool highlight)
+        public void DebugHighlightNotWalkableTiles(bool highlight)
         {
             MapManager.ForEach((tile) =>
             {
                 if (tile != null)
                 {
                     var Movement = MapManager.IsTileWalkable(tile.Coordinates);
-                    var o = tile.GridObjectReferences[ETileLayer.Ground0.Int()];
-                    if (o != null)
+                    var ents = EntitiesManager.GetEntitiesOnPosition(tile.Coordinates);
+                    foreach (var gor in tile.GridObjectReferences)
                     {
-                        foreach (var s in o.GameObject.GetComponentsInChildren<SpriteRenderer>())
+                        if (gor != null)
                         {
-                            s.color = Movement ? Color.white : Color.red;
+                            foreach (var s in gor.GameObject.GetComponentsInChildren<SpriteRenderer>())
+                            {
+                                s.color = Movement && ents.Count == 0 ? Color.white : Color.red;
+                            }
                         }
                     }
                 }

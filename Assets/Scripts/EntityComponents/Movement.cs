@@ -17,14 +17,13 @@ namespace Dungeon
         bool _isMoving = false;
         public float speed = 0.5f;
         public bool MovingDone { get { return !_isMoving && (currentPath == null || currentPath.Count == 0); } }
-        public MapProxy MapProxy;
+        public MapProxy MapProxy { get { return Entity.MapProxy; } }
         public Vector2Int StartPosition;
         public Entity Entity;
         // Use this for initialization
         void Awake()
         {
             Entity = GetComponent<Entity>();
-            MapProxy = Entity.MapProxy;
         }
 
         void Start()
@@ -52,7 +51,7 @@ namespace Dungeon
                     if (currentPath != null && MapProxy.IsTileWalkable(nextposition))
                     {
                         //start movement to next tile
-                        MapProxy.MoveObject(nextposition);
+                        //MapProxy.MoveObject(nextposition);
                         //Debug.Log ("Moving to next position " + nextposition);
                         if (DirectionChange != null) DirectionChange(nextposition - new Vector2Int(this.transform.position, EVectorComponents.XZ));
                         if (MoveStart != null) MoveStart(nextposition);
@@ -98,7 +97,7 @@ namespace Dungeon
         public void SetTargetTile(Vector2Int? targettile)
         {
             this.TargetTile = targettile;
-            currentPath = MapProxy.FindPath(targettile.Value);
+            currentPath = MapProxy.FindPath(targettile.Value, false);
             if (currentPath != null && currentPath.Count > 0) currentPath.PopFirst();
         }
         public Vector2Int GetTilePosition()

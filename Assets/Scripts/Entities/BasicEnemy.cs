@@ -17,8 +17,9 @@ namespace Dungeon
         bool _lastIsIdle = true;
 
 
-        void Awake()
+        new void Awake()
         {
+            base.Awake();
             GameController = GameObject.Find("GameController").GetComponent<GameController>();
             Movement = this.GetComponent<Movement>();
             Combat = this.GetComponent<Combat>();

@@ -5,18 +5,19 @@ using IsoEngine1;
 namespace Dungeon
 {
 
-    public class DungeonMapManager : MapManager
+    public class DungeonMapManager : TileGridManager
     {
-        public AStarPathfinding astar;
+        //public AStarPathfinding astar;
         public IPathfidningAdapter PathFinding;
+
         void Awake()
         {
+            base.Init();
             PathFinding = new AStarPathfinding();
             PathFinding.Init(this.Size);
-            base.Init();
         }
 
-        protected override bool IsTileWalkableTest(IsoEngine1.Tile tile)
+        protected bool IsTileWalkableTest(IsoEngine1.Tile tile)
         {
             //bool objectsWalkable = true;
             //for (var i = ETileLayer.Object0.Int(); i < tile.GridObjectReferences.Length; i++)
@@ -24,11 +25,10 @@ namespace Dungeon
             //    var gor = tile.GridObjectReferences[i];
             //    if(gor)
             //}
-            //return tile != null
-            //    && tile.GridObjectReferences[ETileLayer.Ground0.Int()] != null // floor is not null
-            //    && tile.GridObjectReferences[ETileLayer.Ground2.Int()] == null // wall is null
-            //    && objectsWalkable;
-            return true;
+            return tile != null
+                && tile.GridObjectReferences[ETileLayer.Ground0.Int()] != null // floor is not null
+                && tile.GridObjectReferences[ETileLayer.Ground1.Int()] == null // wall is null
+                && tile.GridObjectReferences[ETileLayer.Object0.Int()] == null; //
         }
 
         //protected virtual bool IsTileWalkableTest(Tile tile)
@@ -52,20 +52,20 @@ namespace Dungeon
             }
         }
 
-        
 
-        public Path FindPath(Vector2Int start, Vector2Int end)
+
+        public Path FindPath(Vector2Int start, Vector2Int end, PathFinderInfo pfi = null)
         {
-            return PathFinding.FindPath(start, end);
+            return PathFinding.FindPath(start, end, pfi);
         }
 
         public override void OnTileAllocated(Tile tile, int layerIndex)
         {
-            this.PathFinding.SetTile(tile.Coordinates, this.IsTileWalkableTest(tile));
+            this.PathFinding.SetTile(tile.Coordinates, this.IsTileWalkableTest(tile), null);
         }
         public override void OnTileDeallocated(Tile tile, int layerIndex)
         {
-            this.PathFinding.SetTile(tile.Coordinates, this.IsTileWalkableTest(tile));
+            this.PathFinding.SetTile(tile.Coordinates, this.IsTileWalkableTest(tile), null);
         }
 
         public Vector2Int? GetRandomMovementTile(Vector2Int current, int rectangularRadius = -1)

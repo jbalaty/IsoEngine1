@@ -35,8 +35,8 @@ public static class ETileLayerExtensions
 public interface IPathfidningAdapter
 {
     void Init(Vector2Int size);
-    void SetTile(Vector2Int coords, bool isMovement);
-    Path FindPath(Vector2Int start, Vector2Int end);
+    void SetTile(Vector2Int coords, bool? isWalkable, bool? isFlyable);
+    Path FindPath(Vector2Int start, Vector2Int end, PathFinderInfo pfinfo);
     bool IsTileWalkable(Vector2Int coords);
 }
 
@@ -310,16 +310,16 @@ public class MapManager : TileGridManager
 
     public Path FindPath(Vector2Int start, Vector2Int end)
     {
-        return PathFinding.FindPath(start, end);
+        return PathFinding.FindPath(start, end, null);
     }
 
     public override void OnTileAllocated(Tile tile, int layerIndex)
     {
-        this.PathFinding.SetTile(tile.Coordinates, this.IsTileWalkableTest(tile));
+        this.PathFinding.SetTile(tile.Coordinates, this.IsTileWalkableTest(tile), null);
     }
     public override void OnTileDeallocated(Tile tile, int layerIndex)
     {
-        this.PathFinding.SetTile(tile.Coordinates, this.IsTileWalkableTest(tile));
+        this.PathFinding.SetTile(tile.Coordinates, this.IsTileWalkableTest(tile), null);
     }
 
     public Vector2Int? GetRandomMovementTile(Vector2Int current, int rectangularRadius = -1)

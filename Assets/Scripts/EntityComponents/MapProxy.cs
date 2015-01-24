@@ -7,7 +7,7 @@ namespace Dungeon
 {
     public class MapProxy : MonoBehaviour
     {
-        MapManager MapManager;
+        DungeonMapManager MapManager;
         public Entity Entity;
 
         void Awake()
@@ -44,15 +44,16 @@ namespace Dungeon
             return MapManager.FindPath(start, end);
         }
 
-        public Path FindPath(Vector2Int end)
+        public Path FindPath(Vector2Int end, bool ignoreOtherEntities)
         {
-            return MapManager.FindPath(Entity.GetTilePosition(), end);
+            return MapManager.FindPath(Entity.GetTilePosition(), end,
+                new PathFinderInfo(ignoreOtherEntities, Entity.EntitiesManager, Entity));
         }
 
         public void MoveObject(Vector2Int position)
         {
             // reserve next tile in map
-            var thisGO = MapManager.GetObject(Entity.GetTilePosition(), ETileLayer.Object1.Int());
+            var thisGO = MapManager.GetObject(Entity.GetTilePosition(), Entity.MapLayer.Int());
             if (thisGO == null) throw new Exception(this.gameObject.name
                 + " Alarm - there should be object on layer Object1 and position "
                 + Entity.GetTilePosition() + " (" + this.name + ")");

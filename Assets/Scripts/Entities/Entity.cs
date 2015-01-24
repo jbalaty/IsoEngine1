@@ -17,30 +17,22 @@ namespace Dungeon
         public MapProxy MapProxy;
         public ETileLayer MapLayer = ETileLayer.Object0;
         [SerializeField]
-        private bool Walkable = false;
-        public bool IsWalkable
-        {
-            get
-            {
-                return MapProxy.IsTileWalkable(this.GetTilePosition());
-            }
-            set
-            {
-
-                //MapProxy.SetTile(MapLayer);
-            }
-        }
+        public bool IsWalkable = true;
 
         protected void Awake()
         {
             Movement = this.GetComponent<Movement>();
             MapProxy = this.GetComponent<MapProxy>();
+            if (MapProxy == null)
+            {
+                MapProxy = this.gameObject.AddComponent<MapProxy>();
+            }
         }
         protected void Start()
         {
             EntitiesManager = GameObject.Find("Entities").GetComponent<EntitiesManager>();
             EntitiesManager.RegisterEntity(this);
-            MapProxy.SetupTile(MapLayer);
+            //if (!IsWalkable) MapProxy.SetupTile(MapLayer);
         }
 
         void OnDestroy()
