@@ -9,6 +9,7 @@ namespace Dungeon
     {
         Animator[] AnimControllers;
         protected GameController GameController;
+        public Entity Entity;
         public Combat Combat;
         [Range(0, 1)]
         public float WalkStandRatio = 0.7f;
@@ -21,6 +22,7 @@ namespace Dungeon
         {
             base.Awake();
             GameController = GameObject.Find("GameController").GetComponent<GameController>();
+            Entity = this.GetComponent<Entity>();
             Movement = this.GetComponent<Movement>();
             Combat = this.GetComponent<Combat>();
             Movement.StateChange += Movement_StateChange;
@@ -28,6 +30,7 @@ namespace Dungeon
             Movement.MoveStart += Movement_MoveStart;
             Movement.MoveEnd += Movement_MoveEnd;
             AnimControllers = this.GetComponentsInChildren<Animator>();
+
         }
 
         /*void Start()
@@ -96,7 +99,16 @@ namespace Dungeon
         protected override Dungeon.EntityAction DoPlanNextAction(Dungeon.EntityAction currentAction)
         {
             var result = base.DoPlanNextAction(currentAction);
-            if (Combat.LastAttacker != null && Combat.LastAttacker.GetComponent<Combat>().CurrentHitPoints > 0)
+            var playersClose = EntitiesManager.GetEntities((e) =>
+            {
+                return e.GetComponent<Player>() != null && Utils.DiagonalDistance(this.GetTilePosition(), e.GetTilePosition()) <= 2;
+            });
+            if (playersClose.Count > 0)
+            {
+                Combat.LastAttacker = playersClose[0];
+            }
+
+            if (Combat.LastAttacker != null && Combat.LastAttacker.GetComponent<Combat>().IsAlive)
             {
                 if (Combat.IsInSquareRange(Combat.LastAttacker.GetTilePosition(), this.GetTilePosition(), 1))
                 {
@@ -105,8 +117,11 @@ namespace Dungeon
                 else
                 {
                     // follow the attacker
-                    var pp = Combat.LastAttacker.GetComponent<Movement>().PreviousPosition;
-                    Movement.SetTargetTile(pp);
+                    var pp = Combat.LastAttacker.GetTilePosition();
+                    Movement.SetTargetTile(pp, EntitiesManager.AllEntities.FindAll((e) =>
+                    {
+                        return e != this.Entity && e != Combat.LastAttacker;
+                    }));
                     result = new EntityAction<Vector2Int>("MoveToPosition", pp);
                 }
             }
@@ -118,7 +133,10 @@ namespace Dungeon
                 || (Combat.CurrentHitPoints <= Combat.MaxHitPoints * 0.2f))
             {
                 // plan path
-                var coords = GameController.MapManager.GetRandomMovementTile(Movement.GetTilePosition(), 3);
+                var coords = MapProxy.GetRandomMovementTile(Entity.StartPosition, (c) =>
+                {
+                    return c != Entity.StartPosition && c != this.GetTilePosition();
+                }, 2);
                 if (coords.HasValue)
                 {
                     Debug.Log(this.name + " chooses its destination point: " + coords.Value);

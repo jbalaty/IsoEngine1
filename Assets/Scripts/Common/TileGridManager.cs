@@ -344,7 +344,7 @@ namespace IsoEngine1
 
         public Vector2Int GetRandomTileCoords(Rect rect)
         {
-            return new Vector2Int(UnityEngine.Random.Range((int)rect.xMin, (int)rect.xMax), UnityEngine.Random.Range((int)rect.yMin, (int)rect.yMax));
+            return new Vector2Int(UnityEngine.Random.Range((int)rect.xMin, (int)rect.xMax + 1), UnityEngine.Random.Range((int)rect.yMin, (int)rect.yMax + 1));
         }
     }
 

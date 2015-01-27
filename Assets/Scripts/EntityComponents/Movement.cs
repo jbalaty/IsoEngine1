@@ -2,6 +2,7 @@
 using System.Collections;
 using IsoEngine1;
 using System;
+using System.Collections.Generic;
 
 namespace Dungeon
 {
@@ -13,6 +14,7 @@ namespace Dungeon
         public event Action<Vector2Int> MoveEnd;
         Vector2Int? TargetTile;
         public Vector2Int PreviousPosition;
+        public Vector2Int NextPosition;
         Path currentPath;
         bool _isMoving = false;
         public float speed = 0.5f;
@@ -28,7 +30,7 @@ namespace Dungeon
 
         void Start()
         {
-            StartPosition = GetTilePosition();
+            NextPosition = StartPosition = GetTilePosition();
         }
 
         public void DoNextStep()
@@ -57,6 +59,7 @@ namespace Dungeon
                         if (MoveStart != null) MoveStart(nextposition);
                         if (StateChange != null) StateChange(false);
                         PreviousPosition = GetTilePosition();
+                        NextPosition = nextposition;
                         StartCoroutine(MoveToPosition(nextposition.Vector3(EVectorComponents.XZ), () =>
                         {
                             if (MoveEnd != null) MoveEnd(new Vector2Int(this.transform.position, EVectorComponents.XZ));
@@ -65,6 +68,7 @@ namespace Dungeon
                             {
                                 //if (StateChange != null) StateChange(true);
                             }
+                            Entity.EntitiesManager.EntityMoved(Entity, PreviousPosition, NextPosition);
                         }));
                     }
                     else // if tile is not Movement
@@ -94,10 +98,10 @@ namespace Dungeon
             this._isMoving = false;
         }
 
-        public void SetTargetTile(Vector2Int? targettile)
+        public void SetTargetTile(Vector2Int? targettile, IEnumerable<Entity> collisionEntities = null)
         {
             this.TargetTile = targettile;
-            currentPath = MapProxy.FindPath(targettile.Value, false);
+            currentPath = MapProxy.FindPath(targettile.Value, collisionEntities);
             if (currentPath != null && currentPath.Count > 0) currentPath.PopFirst();
         }
         public Vector2Int GetTilePosition()

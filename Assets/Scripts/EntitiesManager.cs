@@ -2,6 +2,7 @@
 using System.Collections;
 using IsoEngine1;
 using System.Collections.Generic;
+using UnityEngine.EventSystems;
 
 namespace Dungeon
 {
@@ -10,8 +11,11 @@ namespace Dungeon
         public GameObject Root;
         public List<Entity> AllEntities = new List<Entity>();
 
+        public static EntitiesManager Instance;
+
         void Awake()
         {
+            if (Instance == null) Instance = this;
         }
 
         // Use this for initialization
@@ -25,16 +29,6 @@ namespace Dungeon
             var ents = this.GetComponentsInChildren<Entity>();
             result.AddRange(ents);
             return result;
-        }
-
-        public void SetupExistingEntities()
-        {
-            AllEntities.Clear();
-            foreach (var e in AllEntities)
-            {
-                RegisterEntity(e);
-
-            }
         }
 
         public void RegisterEntity(Entity entity)
@@ -58,17 +52,31 @@ namespace Dungeon
 
         public List<Entity> GetEntitiesOnPosition(Vector2Int coords)
         {
+            /*var result = new List<Entity>();
+            foreach (var e in GetAllEntities())
+            {
+                if (e.GetTilePosition(true) == coords)
+                {
+                    result.Add(e);
+                }
+            }
+            return result;
+             */
+            return EntitiesManager.FindEntitiesOnPosition(this.AllEntities, coords);
+        }
+
+        public List<Entity> GetEntities(System.Predicate<Entity> predicate)
+        {
             var result = new List<Entity>();
             foreach (var e in GetAllEntities())
             {
-                if (new Vector2Int(e.transform.position, EVectorComponents.XZ) == coords)
+                if (predicate(e))
                 {
                     result.Add(e);
                 }
             }
             return result;
         }
-        
 
         public void PlanAllEntitiesAction()
         {
@@ -91,5 +99,51 @@ namespace Dungeon
                 e.ProcessNextAction();
             }
         }
+
+        public void EntityMoved(Entity entity, Vector2Int prevPosition, Vector2Int nextPosition)
+        {
+            foreach (var e in GetEntitiesOnPosition(prevPosition))
+            {
+                //e.OnEntityOut(entity);
+                ExecuteEvents.Execute<IEntityTrigger>(e.gameObject, null, (o, p) => o.OnEntityOut(entity));
+            }
+            foreach (var e in GetEntitiesOnPosition(nextPosition))
+            {
+                if (e != entity)
+                {
+                    //e.OnEntityIn(entity);
+                    ExecuteEvents.Execute<IEntityTrigger>(e.gameObject, null, (o, p) => o.OnEntityIn(entity));
+                }
+            }
+
+        }
+
+        public static List<Entity> FindEntitiesOnPosition(IEnumerable<Entity> ents, Vector2Int position)
+        {
+            var result = new List<Dungeon.Entity>();
+            foreach (var e in ents)
+            {
+                if (e.GetTilePosition(true) == position)
+                {
+                    result.Add(e);
+                }
+            }
+            return result;
+        }
+
+        // specific entities functions, dont know where to put them
+        public Transform GoldPile;
+        public Transform TextMesh;
+
+        public Entity SpawnGoldPile(Vector2Int coords, int amount)
+        {
+            var spawn = Instantiate(GoldPile, coords.Vector3(EVectorComponents.XZ), Quaternion.identity) as Transform;
+            spawn.parent = this.transform;
+            spawn.GetComponent<Pickable>().Gold = amount;
+            return spawn.GetComponent<Entity>();
+        }
+
+
     }
+
 }

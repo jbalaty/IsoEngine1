@@ -15,14 +15,19 @@ namespace Dungeon
         public EntityAction NextAction = Entity.NoAction;
         public Movement Movement;
         public MapProxy MapProxy;
+        public TextMeshSpawner TextMeshSpawner;
         public ETileLayer MapLayer = ETileLayer.Object0;
         [SerializeField]
         public bool IsWalkable = true;
+        public Vector2Int StartPosition;
+
+
 
         protected void Awake()
         {
             Movement = this.GetComponent<Movement>();
             MapProxy = this.GetComponent<MapProxy>();
+            TextMeshSpawner = this.GetComponent<TextMeshSpawner>();
             if (MapProxy == null)
             {
                 MapProxy = this.gameObject.AddComponent<MapProxy>();
@@ -32,7 +37,7 @@ namespace Dungeon
         {
             EntitiesManager = GameObject.Find("Entities").GetComponent<EntitiesManager>();
             EntitiesManager.RegisterEntity(this);
-            //if (!IsWalkable) MapProxy.SetupTile(MapLayer);
+            StartPosition = GetTilePosition();
         }
 
         void OnDestroy()
@@ -62,9 +67,16 @@ namespace Dungeon
         protected virtual void DoProcessNextAction(EntityAction action)
         {
         }
-        public Vector2Int GetTilePosition()
+        public Vector2Int GetTilePosition(bool getMovementNextPosition = false)
         {
-            return new Vector2Int(transform.position, EVectorComponents.XZ);
+            if (getMovementNextPosition && Movement != null)
+            {
+                return this.Movement.NextPosition;
+            }
+            else
+            {
+                return new Vector2Int(this.transform.position, EVectorComponents.XZ);
+            }
         }
 
         public void Log(string message, Object context = null)

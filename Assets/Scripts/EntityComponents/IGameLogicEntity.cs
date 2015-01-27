@@ -10,4 +10,10 @@ namespace Dungeon
         EntityAction PlanNextAction();
         EntityAction ProcessNextAction();
     }
+
+    public interface IEntityTrigger : IEventSystemHandler
+    {
+        void OnEntityIn(Entity entity);
+        void OnEntityOut(Entity entity);
+    }
 }

@@ -37,7 +37,7 @@ public interface IPathfidningAdapter
     void Init(Vector2Int size);
     void SetTile(Vector2Int coords, bool? isWalkable, bool? isFlyable);
     Path FindPath(Vector2Int start, Vector2Int end, PathFinderInfo pfinfo);
-    bool IsTileWalkable(Vector2Int coords);
+    bool IsTileWalkable(Vector2Int coords, PathFinderInfo pfinfo);
 }
 
 #region Grid object interfaces
@@ -295,7 +295,7 @@ public class MapManager : TileGridManager
         {
             //var tile = this.GetTile(coords);
             //return IsTileWalkableTest(tile);
-            return PathFinding.IsTileWalkable(coords);
+            return PathFinding.IsTileWalkable(coords, new PathFinderInfo());
         }
         else
         {

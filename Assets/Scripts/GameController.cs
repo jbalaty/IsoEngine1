@@ -34,6 +34,8 @@ namespace Dungeon
         #endregion
 
         bool _SimulatingTurn = false;
+        float _timeOfLastClick = 0f;
+        public bool DebugShowNotWalkableTilesRed = false;
 
         void Awake()
         {
@@ -47,7 +49,6 @@ namespace Dungeon
         void Start()
         {
             //Debug.Log("GameController start");
-            EntitiesManager.SetupExistingEntities();
             var tiles = MapObject.GetComponentsInChildren<TileComponent>();
             foreach (var tile in tiles)
             {
@@ -87,33 +88,40 @@ namespace Dungeon
             if (Input.GetMouseButtonUp(0))
             {
                 var coords = GetTilePositionFromMouse(Input.mousePosition);
-                if (coords.HasValue)
+                if (coords.HasValue && (Time.time - _timeOfLastClick) >= 0.5f)
                 {
-                    //Debug.Log("Mouse pick: " + coords);
+                    Debug.Log("Mouse pick: " + coords);
                     var entities = EntitiesManager.GetEntitiesOnPosition(coords.Value);
-                    if (entities.Count == 0)
+                    // try to find combat entity
+                    var someAction = false;
+                    var endTurn = false;
+                    foreach (var e in entities)
                     {
-                        //Player.GetComponent<MovementComponent>().SetTargetTile(coords);
-                        Player.GetComponent<PlayerController>().MoveTo(coords.Value);
-                        HighlightTile(coords.Value);
-                        NextTurn();
-                    }
-                    else
-                    {
-                        var e = entities.First();
-                        if (Player.GetComponent<Combat>().CanAttack(e.GetComponent<Combat>()))
+                        if (e.GetComponent<Combat>() != null
+                            && Player.GetComponent<Combat>().CanAttack(e.GetComponent<Combat>()))
                         {
                             Player.GetComponent<Combat>().Attack(e.GetComponent<Combat>());
-                            NextTurn();
+                            someAction = true;
+                            endTurn = true;
                         }
                         else if (e.GetComponent<ObjectComponent>() != null
-                            && e.GetComponent<ObjectComponent>().CanInteract(Player.GetComponent<Entity>()))
+                          && e.GetComponent<ObjectComponent>().CanInteract(Player.GetComponent<Entity>()))
                         {
                             e.GetComponent<ObjectComponent>().Interact(Player.GetComponent<Entity>());
-                            //NextTurn();
+                            someAction = true;
                         }
-                        //Debug.Log("Attaaaack!!!! " + e.name);
+                        if (someAction) break;
                     }
+                    if (!someAction && MapManager.IsTileWalkable(coords.Value
+                        , new PathFinderInfo(EntitiesManager.AllEntities)))
+                    {
+                        Player.GetComponent<Player>().MoveTo(coords.Value);
+                        HighlightTile(coords.Value);
+                        endTurn = true;
+                    }
+                    if (endTurn) NextTurn();
+                    _timeOfLastClick = Time.time;
+                    // if not, move there
                 }
             }
             if (Input.GetKeyDown(KeyCode.Space) && !_SimulatingTurn)
@@ -171,15 +179,14 @@ namespace Dungeon
             {
                 if (tile != null)
                 {
-                    var Movement = MapManager.IsTileWalkable(tile.Coordinates);
-                    var ents = EntitiesManager.GetEntitiesOnPosition(tile.Coordinates);
+                    var Movement = MapManager.IsTileWalkable(tile.Coordinates, new PathFinderInfo(EntitiesManager.AllEntities));
                     foreach (var gor in tile.GridObjectReferences)
                     {
                         if (gor != null)
                         {
                             foreach (var s in gor.GameObject.GetComponentsInChildren<SpriteRenderer>())
                             {
-                                s.color = Movement && ents.Count == 0 ? Color.white : Color.red;
+                                s.color = Movement || !DebugShowNotWalkableTilesRed ? Color.white : Color.red;
                             }
                         }
                     }

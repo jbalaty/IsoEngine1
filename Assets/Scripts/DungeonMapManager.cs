@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
 using IsoEngine1;
 
 namespace Dungeon
@@ -17,7 +18,7 @@ namespace Dungeon
             PathFinding.Init(this.Size);
         }
 
-        protected bool IsTileWalkableTest(IsoEngine1.Tile tile)
+        protected bool IsMapTileWalkableTest(IsoEngine1.Tile tile)
         {
             //bool objectsWalkable = true;
             //for (var i = ETileLayer.Object0.Int(); i < tile.GridObjectReferences.Length; i++)
@@ -27,8 +28,8 @@ namespace Dungeon
             //}
             return tile != null
                 && tile.GridObjectReferences[ETileLayer.Ground0.Int()] != null // floor is not null
-                && tile.GridObjectReferences[ETileLayer.Ground1.Int()] == null // wall is null
-                && tile.GridObjectReferences[ETileLayer.Object0.Int()] == null; //
+                && tile.GridObjectReferences[ETileLayer.Ground1.Int()] == null; // wall is null
+                //&& tile.GridObjectReferences[ETileLayer.Object0.Int()] == null; //
         }
 
         //protected virtual bool IsTileWalkableTest(Tile tile)
@@ -38,13 +39,13 @@ namespace Dungeon
 
         #region PATHFINDING
 
-        public bool IsTileWalkable(Vector2Int coords)
+        public bool IsTileWalkable(Vector2Int coords, PathFinderInfo pfi = null)
         {
             if (CheckBounds(coords))
             {
                 //var tile = this.GetTile(coords);
                 //return IsTileWalkableTest(tile);
-                return PathFinding.IsTileWalkable(coords);
+                return PathFinding.IsTileWalkable(coords, pfi);
             }
             else
             {
@@ -61,14 +62,21 @@ namespace Dungeon
 
         public override void OnTileAllocated(Tile tile, int layerIndex)
         {
-            this.PathFinding.SetTile(tile.Coordinates, this.IsTileWalkableTest(tile), null);
+            this.PathFinding.SetTile(tile.Coordinates, this.IsMapTileWalkableTest(tile), null);
         }
         public override void OnTileDeallocated(Tile tile, int layerIndex)
         {
-            this.PathFinding.SetTile(tile.Coordinates, this.IsTileWalkableTest(tile), null);
+            this.PathFinding.SetTile(tile.Coordinates, this.IsMapTileWalkableTest(tile), null);
         }
 
-        public Vector2Int? GetRandomMovementTile(Vector2Int current, int rectangularRadius = -1)
+        /// <summary>
+        /// Finds random tile, that fits 
+        /// </summary>
+        /// <param name="center"></param>
+        /// <param name="excludeCoords"></param>
+        /// <param name="rectangularRadius"></param>
+        /// <returns></returns>
+        public Vector2Int? GetRandomMovementTile(Vector2Int center, Func<Vector2Int, bool> testCallback = null, int rectangularRadius = -1)
         {
             Vector2Int? result = null;
             var triesCounter = 0;
@@ -81,13 +89,14 @@ namespace Dungeon
                 }
                 else
                 {
-                    coords = GetRandomTileCoords(new Rect(current.x - rectangularRadius, current.y - rectangularRadius,
+                    coords = GetRandomTileCoords(new Rect(center.x - rectangularRadius, center.y - rectangularRadius,
                         2 * rectangularRadius, 2 * rectangularRadius));
                 }
                 if (CheckBounds(coords))
                 {
                     var rndtile = GetTile(coords);
-                    if (IsTileWalkableTest(rndtile))
+                    if (IsMapTileWalkableTest(rndtile)
+                        && (testCallback != null && testCallback(coords)))
                     {
                         result = rndtile.Coordinates;
                     }

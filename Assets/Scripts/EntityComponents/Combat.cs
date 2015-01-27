@@ -5,6 +5,9 @@ using System;
 
 namespace Dungeon
 {
+
+
+    [RequireComponent(typeof(AudioSource))]
     public class Combat : MonoBehaviour
     {
 
@@ -12,19 +15,32 @@ namespace Dungeon
         public int CurrentHitPoints = 0;
         public int DefenceValue = 1;
         public int AttackValue = 1;
+        public long ExperiencePoints = 0;
+        public bool AutoDestroy = true;
         public Entity LastAttacker = null;
+
 
         public AudioClip DeathSound;
         public AudioClip HitSound;
         public AudioClip AttackSound;
 
-        public event Action<Vector2Int> EntityDead;
+        public event Action<Vector3> EntityDead;
 
         Entity Entity;
+        TextMeshSpawner TextMeshSpawner;
+
+        public bool IsAlive
+        {
+            get
+            {
+                return CurrentHitPoints > 0;
+            }
+        }
 
         void Awake()
         {
             Entity = this.GetComponent<Entity>();
+            TextMeshSpawner = this.GetComponent<TextMeshSpawner>();
         }
 
         void Start()
@@ -34,24 +50,37 @@ namespace Dungeon
 
 
 
-        public int TakeDamage(int damage, Combat cmb)
+        public int TakeDamage(int damage, Combat from)
         {
-            this.CurrentHitPoints -= damage;
-            if (this.CurrentHitPoints > 0)
+            int realDamageWithoutDefence = damage - DefenceValue;
+            if (realDamageWithoutDefence > 0)
             {
-                Debug.Log(this.name + ": taking damage (" + CurrentHitPoints + "/" + MaxHitPoints + ")");
-                StartCoroutine(ChangeColorCoroutine(Color.red));
-                if (HitSound != null) audio.PlayOneShot(HitSound);
+                this.CurrentHitPoints -= realDamageWithoutDefence;
+                if (TextMeshSpawner != null)
+                {
+                    TextMeshSpawner.SpawnTextMesh("- " + realDamageWithoutDefence + "HP", Color.red, 1f);
+                }
+                Debug.Log(this.name + ": taking damage " + damage + "-" + DefenceValue + "=" + realDamageWithoutDefence
+                    + " (Life: " + CurrentHitPoints + "/" + MaxHitPoints + ")");
+                if (this.CurrentHitPoints > 0)
+                {
+                    StartCoroutine(ChangeColorCoroutine(Color.red));
+                    if (HitSound != null) audio.PlayOneShot(HitSound);
+                }
+                else
+                {
+                    if (DeathSound != null) audio.PlayOneShot(DeathSound);
+                    Debug.Log(this.name + ": dying");
+                    StartCoroutine(Utils.WaitForSeconds(DeathSound != null ? DeathSound.length : 0f, () =>
+                    {
+                        if (AutoDestroy) GameObject.Destroy(this.gameObject);
+                        if (EntityDead != null) EntityDead(this.transform.position);
+                    }));
+                }
+                LastAttacker = from.Entity;
             }
-            else
-            {
-                if (DeathSound != null) audio.PlayOneShot(DeathSound);
-                Debug.Log(this.name + ": dying");
-                GameObject.Destroy(Entity, DeathSound != null ? DeathSound.length : 0.3f);
-                if (EntityDead != null) EntityDead(Entity.GetTilePosition());
-            }
-            LastAttacker = cmb.Entity;
-            return damage;
+
+            return realDamageWithoutDefence;
         }
 
         public bool CanAttack(Combat go)
@@ -86,17 +115,24 @@ namespace Dungeon
             var result = false;
             if (CanAttack(go))
             {
-                var be = go.GetComponent<Combat>();
-                be.TakeDamage(1, this);
+                var enemy = go.GetComponent<Combat>();
+                //be.TakeDamage(AttackValue, this);
+                DealDamage(enemy);
                 if (AttackSound != null) audio.PlayOneShot(AttackSound);
                 result = true;
             }
             return result;
         }
 
-        public int DealDamage(int damage)
+        public int DealDamage(Combat enemy)
         {
-            return damage;
+            int realDamageDealt = enemy.TakeDamage(AttackValue, this);
+            if (!enemy.IsAlive)
+            {
+                TextMeshSpawner.SpawnTextMesh("+ " + enemy.MaxHitPoints + "XP", Color.cyan, 1f);
+                ExperiencePoints += enemy.MaxHitPoints;
+            }
+            return realDamageDealt;
         }
 
         IEnumerator ChangeColorCoroutine(Color c)
@@ -117,7 +153,5 @@ namespace Dungeon
                 s.color = Color.white;
             }
         }
-
-
     }
 }

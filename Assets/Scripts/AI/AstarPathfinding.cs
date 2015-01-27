@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using System;
 using IsoEngine1;
 
@@ -10,19 +11,20 @@ public class PathFinderInfo
 {
     public bool FindWalkingPath = true;
     public bool FindFlyPath = false;
-    public bool IgnoreEntities = true;
-    public Dungeon.Entity Entity = null;
-    public Dungeon.EntitiesManager EntitiesManager = null;
+    public IEnumerable<Dungeon.Entity> CollisionEntities = null;
 
     public PathFinderInfo()
     {
 
     }
-    public PathFinderInfo(bool ignoreOthers, Dungeon.EntitiesManager em, Dungeon.Entity e)
+    public PathFinderInfo(IEnumerable<Dungeon.Entity> collisionEnts)
     {
-        this.IgnoreEntities = ignoreOthers;
-        this.EntitiesManager = em;
-        this.Entity = e;
+        this.CollisionEntities = collisionEnts;
+    }
+
+    public List<Dungeon.Entity> FindEntitiesOnPosition(Vector2Int pos)
+    {
+        return Dungeon.EntitiesManager.FindEntitiesOnPosition(CollisionEntities, pos);
     }
 }
 
@@ -31,6 +33,7 @@ public class PathFinderInfo
 /// </summary>
 public class MyPathNode : SettlersEngine.IPathNode<PathFinderInfo>
 {
+    static PathFinderInfo DefaultPathFinderInfo = new PathFinderInfo();
     public Int32 X;
     public Int32 Y;
     public bool NodeIsWalkable;
@@ -39,6 +42,7 @@ public class MyPathNode : SettlersEngine.IPathNode<PathFinderInfo>
     public bool IsWalkable(PathFinderInfo pathfinderinfo)
     {
         var result = true;
+        pathfinderinfo = pathfinderinfo ?? DefaultPathFinderInfo;
         if (pathfinderinfo.FindWalkingPath && !NodeIsWalkable)
         {
             result = false;
@@ -47,14 +51,10 @@ public class MyPathNode : SettlersEngine.IPathNode<PathFinderInfo>
         {
             result = false;
         }
-        else if (!pathfinderinfo.IgnoreEntities)
+        else if (pathfinderinfo.CollisionEntities != null)
         {
-            if (pathfinderinfo.EntitiesManager == null) throw new Exception("Entities manager should not be null");
-            if (pathfinderinfo.EntitiesManager.AllEntities.Count > 0)
-            {
-                var ents = pathfinderinfo.EntitiesManager.GetEntitiesOnPosition(new Vector2Int(X, Y));
-                result = ents.Count == 0;
-            }
+            var collEntsOnCurrentPosition = pathfinderinfo.FindEntitiesOnPosition(new Vector2Int(X, Y));
+            result = collEntsOnCurrentPosition.FindAll((e) => e.IsWalkable).Count == collEntsOnCurrentPosition.Count;
         }
         return result;
     }
@@ -154,8 +154,8 @@ public class AStarPathfinding : IPathfidningAdapter
         return result;
     }
 
-    public bool IsTileWalkable(Vector2Int position)
+    public bool IsTileWalkable(Vector2Int position, PathFinderInfo pfi)
     {
-        return grid[position.x, position.y].IsWalkable(new PathFinderInfo());
+        return grid[position.x, position.y].IsWalkable(pfi);
     }
 }

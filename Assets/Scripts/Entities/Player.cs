@@ -6,13 +6,14 @@ namespace Dungeon
 {
     [RequireComponent(typeof(Movement))]
     [RequireComponent(typeof(AudioSource))]
-    public class PlayerController : Entity
+    public class Player : Entity
     {
         Animator[] AnimControllers;
         Combat Combat;
         int _lastDirection = 3;
         bool _lastIsIdle = true;
         EntityAction UserAction;
+        
         // Use this for initialization
         new void Awake()
         {
