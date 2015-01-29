@@ -1,12 +1,14 @@
 ﻿using UnityEngine;
 using System.Collections;
 using IsoEngine1;
+using Dungeon.Items;
 
 namespace Dungeon
 {
     public class Pickable : MonoBehaviour, IEntityTrigger
     {
-        public int Gold = 0;
+        public Item Item;
+        public float Amount;
         public AudioClip PickupSound;
 
         // Use this for initialization
@@ -23,11 +25,21 @@ namespace Dungeon
 
         void IEntityTrigger.OnEntityIn(Entity entity)
         {
-            if (entity.GetComponent<Inventory>() != null)
+            var inventory = entity.GetComponent<Inventory>();
+            if (inventory != null && inventory.PickItems)
             {
                 Utils.PlayClip(PickupSound);
-                Debug.Log("Picking " + this.Gold + " gold");
-                entity.GetComponent<Inventory>().AddGold(this.Gold);
+                //Debug.Log("Picking " + this. Gold + " gold");
+                //entity.GetComponent<Inventory>().AddGold(this.Gold);
+                inventory.AddItem(this.Item, this.Amount);
+                if (this.Item is Gold)
+                {
+                    var tm = entity.GetComponent<TextMeshSpawner>();
+                    if (tm != null)
+                    {
+                        tm.SpawnTextMesh("+ " + this.Amount + "G", Color.yellow, TextMeshSpawner.DefaultFadeOutTime);
+                    }
+                }
                 Destroy(this.gameObject);
                 Utils.PlayClip(PickupSound);
             }

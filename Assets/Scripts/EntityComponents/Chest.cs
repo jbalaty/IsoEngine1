@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
 using IsoEngine1;
-using System;
 
 namespace Dungeon
 {
@@ -11,6 +10,11 @@ namespace Dungeon
         void Start()
         {
             GetComponentInChildren<Animator>().SetBool("IsOpen", Value == 1);
+            var inventory = GetComponent<Inventory>();
+            if (inventory != null)
+            {
+                inventory.AddItem(new Items.Gold(), Random.Range(0, 11));
+            }
         }
 
 

@@ -15,10 +15,10 @@ namespace Dungeon
         Vector2Int? TargetTile;
         public Vector2Int PreviousPosition;
         public Vector2Int NextPosition;
-        Path currentPath;
+        public Path CurrentPath;
         bool _isMoving = false;
         public float speed = 0.5f;
-        public bool MovingDone { get { return !_isMoving && (currentPath == null || currentPath.Count == 0); } }
+        public bool MovingDone { get { return !_isMoving && (CurrentPath == null || CurrentPath.Count == 0); } }
         public MapProxy MapProxy { get { return Entity.MapProxy; } }
         public Vector2Int StartPosition;
         public Entity Entity;
@@ -33,24 +33,25 @@ namespace Dungeon
             NextPosition = StartPosition = GetTilePosition();
         }
 
-        public void DoNextStep()
+        public bool DoNextStep()
         {
-            if (!this._isMoving && currentPath != null)
+            var result = false;
+            if (!this._isMoving && CurrentPath != null)
             {
-                if (currentPath.IsEmpty())
+                if (CurrentPath.IsEmpty())
                 {
                     if (this.TargetTile != null && this.GetTilePosition() != TargetTile)
                     {
                         if (StateChange != null) StateChange(true);
-                        currentPath = null;
+                        CurrentPath = null;
                     }
                 }
                 else // if current path is not empty
                 {
                     // follow the path, but check everytime if the tile is really empty
-                    var nextposition = currentPath.PopFirst();
+                    var nextposition = CurrentPath.PopFirst();
                     DebugShowPath(nextposition);
-                    if (currentPath != null && MapProxy.IsTileWalkable(nextposition))
+                    if (CurrentPath != null && MapProxy.IsTileWalkable(nextposition))
                     {
                         //start movement to next tile
                         //MapProxy.MoveObject(nextposition);
@@ -60,11 +61,12 @@ namespace Dungeon
                         if (StateChange != null) StateChange(false);
                         PreviousPosition = GetTilePosition();
                         NextPosition = nextposition;
+                        result = true;
                         StartCoroutine(MoveToPosition(nextposition.Vector3(EVectorComponents.XZ), () =>
                         {
                             if (MoveEnd != null) MoveEnd(new Vector2Int(this.transform.position, EVectorComponents.XZ));
                             if (StateChange != null) StateChange(true);
-                            if (currentPath.IsEmpty())
+                            if (CurrentPath.IsEmpty())
                             {
                                 //if (StateChange != null) StateChange(true);
                             }
@@ -73,10 +75,11 @@ namespace Dungeon
                     }
                     else // if tile is not Movement
                     {
-                        currentPath = null;
+                        CurrentPath = null;
                     }
                 }
             }
+            return result;
         }
 
         public IEnumerator MoveToPosition(Vector3 nexttcoords, System.Action onFinished)
@@ -98,11 +101,12 @@ namespace Dungeon
             this._isMoving = false;
         }
 
-        public void SetTargetTile(Vector2Int? targettile, IEnumerable<Entity> collisionEntities = null)
+        public Path SetTargetTile(Vector2Int? targettile, IEnumerable<Entity> collisionEntities = null)
         {
             this.TargetTile = targettile;
-            currentPath = MapProxy.FindPath(targettile.Value, collisionEntities);
-            if (currentPath != null && currentPath.Count > 0) currentPath.PopFirst();
+            CurrentPath = MapProxy.FindPath(targettile.Value, collisionEntities);
+            if (CurrentPath != null && CurrentPath.Count > 0) CurrentPath.PopFirst();
+            return CurrentPath;
         }
         public Vector2Int GetTilePosition()
         {
@@ -121,7 +125,7 @@ namespace Dungeon
         {
             // DEBUG CODE
             var prev = nextposition;
-            foreach (var n in currentPath)
+            foreach (var n in CurrentPath)
             {
                 Debug.DrawLine(prev.Vector3(EVectorComponents.XZ) + new Vector3(.5f, 0f, .5f), n.Vector3(EVectorComponents.XZ) + new Vector3(.5f, 0f, .5f), Color.yellow, 0.2f);
                 prev = n;

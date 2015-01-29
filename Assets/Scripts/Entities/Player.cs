@@ -9,28 +9,30 @@ namespace Dungeon
     public class Player : Entity
     {
         Animator[] AnimControllers;
-        Combat Combat;
+        public Combat Combat;
+        public Entity Entity;
         int _lastDirection = 3;
         bool _lastIsIdle = true;
         EntityAction UserAction;
-        
+
         // Use this for initialization
         new void Awake()
         {
             base.Awake();
             AnimControllers = this.GetComponentsInChildren<Animator>();
             Combat = this.GetComponent<Combat>();
+            Entity = this.GetComponent<Entity>();
+        }
+
+        new void Start()
+        {
+            base.Start();
             Movement.StateChange += Movement_StateChange;
             Movement.DirectionChange += Movement_DirectionChange;
             Movement.MoveStart += Movement_MoveStart;
             Movement.MoveEnd += Movement_MoveEnd;
+            Combat.EntityDead += OnDead;
         }
-
-        /*void Start()
-        {
-            //Movement.MapManager.SetupObject(new Vector2Int(transform.position, EVectorComponents.XZ),
-            //    ETileLayer.Object1.Int(), new GridObject(this.gameObject), Vector2Int.One);
-        }*/
 
         void OnGUI()
         {
@@ -43,7 +45,7 @@ namespace Dungeon
         void Movement_DirectionChange(Vector2Int direction)
         {
             var newDirection = Utils.GetDirectionFromVector(direction) ?? _lastDirection;
-            SetDirection(newDirection);
+            foreach (var a in AnimControllers) a.SetInteger("Direction", newDirection);
             _lastDirection = newDirection;
         }
         void Movement_MoveStart(Vector2Int nextPosition)
@@ -58,7 +60,7 @@ namespace Dungeon
         {
             if (this._lastIsIdle != isidle)
             {
-                SetIsIdle(isidle);
+                foreach (var a in AnimControllers) a.SetBool("IsIdle", isidle);
             }
             this._lastIsIdle = isidle;
         }
@@ -87,9 +89,23 @@ namespace Dungeon
 
         protected override void DoProcessNextAction(EntityAction action)
         {
+            base.DoProcessNextAction(action);
             if (action.Name == "MoveToPosition")
             {
-                Movement.DoNextStep();
+                if (!Movement.DoNextStep() && Entity.GetTilePosition(true) != GetTilePosition())
+                {
+                    var path = Movement.SetTargetTile((action as EntityAction<Vector2Int>).Param0);
+                    // if there is no path to this tile, stop and next plan choose other action
+                    if (path == null || path.Count == 0)
+                    {
+                        CurrentAction = NoAction;
+                    }
+                }
+            }
+            else if (action.Name == "AttackEntity")
+            {
+                var enemy = (action as EntityAction<Entity>).Param0.GetComponent<Combat>();
+                this.Combat.Attack(enemy);
             }
         }
         public void MoveTo(Vector2Int coords)
@@ -97,22 +113,27 @@ namespace Dungeon
             this.Movement.SetTargetTile(coords);
             this.UserAction = new EntityAction<Vector2Int>("MoveToPosition", coords);
         }
+
+        public void Attack(Entity entity)
+        {
+            if (this.Combat.CanAttack(entity.GetComponent<Combat>()))
+            {
+                this.UserAction = new EntityAction<Entity>("AttackEntity", entity);
+            }
+            else
+            {
+                this.Movement.SetTargetTile(entity.GetTilePosition(true), EntitiesManager.AllEntities.FindAll((e) => e != entity));
+                this.UserAction = new EntityAction<Vector2Int>("MoveToPosition", entity.GetTilePosition(true));
+            }
+        }
         #endregion
 
+        void OnDead(Vector3 position)
+        {
+            foreach (var a in AnimControllers) a.SetBool("IsDead", true);
+            foreach (var r in GetComponentsInChildren<SpriteRenderer>()) r.sortingLayerName = "Ground1";
+            Entity.enabled = false;
+        }
 
-        void SetDirection(int dir)
-        {
-            foreach (Animator ac in AnimControllers)
-            {
-                ac.SetInteger("Direction", dir);
-            }
-        }
-        void SetIsIdle(bool isIdle)
-        {
-            foreach (Animator ac in AnimControllers)
-            {
-                ac.SetBool("IsIdle", isIdle);
-            }
-        }
     }
 }

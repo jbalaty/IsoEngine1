@@ -13,7 +13,6 @@ namespace Dungeon
         public bool UseHitPointsForGoldRange = true;
         [Range(0, 1)]
         public float LootProbability = 0.7f;
-        public AudioClip GoldLootSound;
 
         void Awake()
         {
@@ -37,9 +36,19 @@ namespace Dungeon
         {
             if (UnityEngine.Random.value < LootProbability)
             {
-                Utils.PlayClip(GoldLootSound);
-                int amount = Random.Range(this.MinGoldAmount, this.MaxGoldAmount + 1);
-                this.Entity.EntitiesManager.SpawnGoldPile(this.Entity.GetTilePosition(), amount);
+                var typeIdx = UnityEngine.Random.Range(0, 2);
+                //var typeIdx = 0;
+                if (typeIdx == 0)
+                {
+                    Utils.PlayClip(EntitiesManager.Instance.GoldLootSound);
+                    int amount = Random.Range(this.MinGoldAmount, this.MaxGoldAmount + 1);
+                    this.Entity.EntitiesManager.SpawnGoldPile(this.Entity.GetTilePosition(), amount);
+                }
+                else if (typeIdx == 1)
+                {
+                    Utils.PlayClip(EntitiesManager.Instance.PotionLootSound);
+                    this.Entity.EntitiesManager.SpawnHealingPotion(this.Entity.GetTilePosition());
+                }
             }
         }
 

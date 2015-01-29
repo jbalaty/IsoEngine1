@@ -6,7 +6,7 @@ namespace Dungeon
     public class TextMeshSpawner : MonoBehaviour
     {
         string SortingLayerName = "HelpersOverlay0";
-        public float FadeOutTime = 1f;
+        public static readonly float DefaultFadeOutTime = 1f;
         public float DelayBetweenSpawns = 0.1f;
 
         float _LastSpawnTime;
@@ -52,8 +52,8 @@ namespace Dungeon
 
             //textmesh.renderer.sortingLayerID = 8;
             //textmesh.font = Resources.GetBuiltinResource(typeof(Font), "Arial.ttf") as Font;//new Font("Arial");
-            
-            
+
+
             /* this does not work very well, because it could happen, 
              * that XP message shows before HP message, or last attack message from enemy
              * but better handling of combat events should resolve this

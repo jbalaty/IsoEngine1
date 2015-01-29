@@ -97,14 +97,12 @@ namespace Dungeon
                     var endTurn = false;
                     foreach (var e in entities)
                     {
-                        if (e.GetComponent<Combat>() != null
-                            && Player.GetComponent<Combat>().CanAttack(e.GetComponent<Combat>()))
+                        if (e.enabled && e.GetComponent<Combat>() != null)
                         {
-                            Player.GetComponent<Combat>().Attack(e.GetComponent<Combat>());
+                            Player.GetComponent<Player>().Attack(e);
                             someAction = true;
                             endTurn = true;
-                        }
-                        else if (e.GetComponent<ObjectComponent>() != null
+                        } else if (e.enabled && e.GetComponent<ObjectComponent>() != null
                           && e.GetComponent<ObjectComponent>().CanInteract(Player.GetComponent<Entity>()))
                         {
                             e.GetComponent<ObjectComponent>().Interact(Player.GetComponent<Entity>());

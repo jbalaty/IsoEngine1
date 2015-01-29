@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Linq;
 using IsoEngine1;
 
 namespace Dungeon
@@ -25,21 +26,19 @@ namespace Dungeon
             Entity = this.GetComponent<Entity>();
             Movement = this.GetComponent<Movement>();
             Combat = this.GetComponent<Combat>();
-            Movement.StateChange += Movement_StateChange;
-            Movement.DirectionChange += Movement_DirectionChange;
-            Movement.MoveStart += Movement_MoveStart;
-            Movement.MoveEnd += Movement_MoveEnd;
             AnimControllers = this.GetComponentsInChildren<Animator>();
 
         }
 
-        /*void Start()
+        new void Start()
         {
-            //Movement.MapManager.SetupObject(new Vector2Int(transform.position, EVectorComponents.XZ),
-            //    ETileLayer.Object1.Int(), new GridObject(this.gameObject), Vector2Int.One);
-
-            //
-        }*/
+            base.Start();
+            Movement.StateChange += Movement_StateChange;
+            Movement.DirectionChange += Movement_DirectionChange;
+            Movement.MoveStart += Movement_MoveStart;
+            Movement.MoveEnd += Movement_MoveEnd;
+            Combat.EntityDead += OnDead;
+        }
 
         // Update is called once per frame
         void FixedUpdate()
@@ -56,27 +55,11 @@ namespace Dungeon
             return result;
         }
 
-        void SetDirection(int dir)
-        {
-            foreach (Animator ac in AnimControllers)
-            {
-                ac.SetInteger("Direction", dir);
-            }
-        }
-
-        void SetIsIdle(bool isIdle)
-        {
-            foreach (Animator ac in AnimControllers)
-            {
-                ac.SetBool("IsIdle", isIdle);
-            }
-        }
-
         #region Movement events
         void Movement_DirectionChange(Vector2Int direction)
         {
             var newDirection = GetDirectionFromVector(direction) ?? _lastDirection;
-            SetDirection(newDirection);
+            foreach (var a in AnimControllers) a.SetInteger("Direction", newDirection);
             _lastDirection = newDirection;
         }
         void Movement_MoveStart(Vector2Int nextPosition)
@@ -87,7 +70,8 @@ namespace Dungeon
         }
         private void Movement_StateChange(bool isidle)
         {
-            SetIsIdle(isidle);
+            //SetIsIdle(isidle);
+            foreach (var a in AnimControllers) a.SetBool("IsIdle", isidle);
             this._lastIsIdle = isidle;
         }
         #endregion
@@ -125,11 +109,11 @@ namespace Dungeon
                     result = new EntityAction<Vector2Int>("MoveToPosition", pp);
                 }
             }
-            else if (!Movement.MovingDone)
+            else if (currentAction.Name == "MoveToPosition" && Movement.CurrentPath != null && Movement.CurrentPath.Count > 0)
             {
                 result = CurrentAction;
             }
-            else if ((Movement.MovingDone && UnityEngine.Random.value < WalkStandRatio)
+            else if ((UnityEngine.Random.value < WalkStandRatio)
                 || (Combat.CurrentHitPoints <= Combat.MaxHitPoints * 0.2f))
             {
                 // plan path
@@ -156,7 +140,15 @@ namespace Dungeon
         {
             if (action.Name == "MoveToPosition")
             {
-                Movement.DoNextStep();
+                if (!Movement.DoNextStep() && Entity.GetTilePosition(true) != GetTilePosition())
+                {
+                    var path = Movement.SetTargetTile((action as EntityAction<Vector2Int>).Param0);
+                    // if there is no path to this tile, stop and next plan choose other action
+                    if (path == null || path.Count == 0)
+                    {
+                        CurrentAction = NoAction;
+                    }
+                }
             }
             else if (action.Name == "AttackEntity")
             {
@@ -165,7 +157,12 @@ namespace Dungeon
             }
         }
 
-
+        protected void OnDead(Vector3 position)
+        {
+            foreach (var a in AnimControllers) a.SetBool("IsDead", true);
+            foreach (var r in GetComponentsInChildren<SpriteRenderer>()) r.sortingLayerName = "Ground1";
+            Entity.enabled = false;
+        }
 
 
         #endregion

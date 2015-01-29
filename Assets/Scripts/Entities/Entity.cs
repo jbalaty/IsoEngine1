@@ -1,10 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections;
 using IsoEngine1;
+using UnityEngine.EventSystems;
 
 namespace Dungeon
 {
-    public class Entity : MonoBehaviour, IGameLogicEntity
+    public class Entity : MonoBehaviour
     {
         public static EntityAction NoAction = new EntityAction("NoAction");
 
@@ -20,7 +21,8 @@ namespace Dungeon
         [SerializeField]
         public bool IsWalkable = true;
         public Vector2Int StartPosition;
-
+        public event System.Action<EntityAction> EntityTurnStart;
+        public event System.Action<EntityAction> EntityTurnEnd;
 
 
         protected void Awake()
@@ -47,16 +49,26 @@ namespace Dungeon
 
         public EntityAction PlanNextAction()
         {
-            var result = DoPlanNextAction(CurrentAction); ;
-            NextAction = result;
-            return result;
+            if (this.enabled)
+            {
+                var result = DoPlanNextAction(CurrentAction);
+                NextAction = result;
+                return result;
+            }
+            else return null;
         }
         public EntityAction ProcessNextAction()
         {
-            CurrentAction = NextAction;
-            NextAction = NoAction;
-            DoProcessNextAction(CurrentAction);
-            return CurrentAction;
+            if (this.enabled)
+            {
+                CurrentAction = NextAction;
+                if (EntityTurnStart != null) EntityTurnStart(CurrentAction);
+                NextAction = NoAction;
+                DoProcessNextAction(CurrentAction);
+                if (EntityTurnEnd != null) EntityTurnEnd(CurrentAction);
+                return CurrentAction;
+            }
+            else return null;
         }
 
         protected virtual EntityAction DoPlanNextAction(EntityAction currentAction)

@@ -12,13 +12,16 @@ namespace Dungeon
     {
 
         public int MaxHitPoints = 10;
-        public int CurrentHitPoints = 0;
-        public int DefenceValue = 1;
-        public int AttackValue = 1;
+        public float CurrentHitPoints = 0;
+        public float DefenceValue = 1;
+        public float AttackValue = 1;
         public long ExperiencePoints = 0;
-        public bool AutoDestroy = true;
+        public bool OnDeadDestroy = true;
+        public bool OnDeadSetWalkable = true;
         public Entity LastAttacker = null;
-
+        [Tooltip("How many HPs is healed in one turn")]
+        public float RegenerationSpeed = 0;
+        float _currentRegenerationProgress = 0;
 
         public AudioClip DeathSound;
         public AudioClip HitSound;
@@ -46,13 +49,14 @@ namespace Dungeon
         void Start()
         {
             CurrentHitPoints = MaxHitPoints;
+            Entity.EntityTurnStart += EntityTurnStart;
         }
 
 
 
-        public int TakeDamage(int damage, Combat from)
+        public int TakeDamage(float damage, Combat from)
         {
-            int realDamageWithoutDefence = damage - DefenceValue;
+            int realDamageWithoutDefence = (int)(damage - DefenceValue);
             if (realDamageWithoutDefence > 0)
             {
                 this.CurrentHitPoints -= realDamageWithoutDefence;
@@ -69,13 +73,11 @@ namespace Dungeon
                 }
                 else
                 {
-                    if (DeathSound != null) audio.PlayOneShot(DeathSound);
                     Debug.Log(this.name + ": dying");
-                    StartCoroutine(Utils.WaitForSeconds(DeathSound != null ? DeathSound.length : 0f, () =>
-                    {
-                        if (AutoDestroy) GameObject.Destroy(this.gameObject);
-                        if (EntityDead != null) EntityDead(this.transform.position);
-                    }));
+                    Utils.PlayClip(DeathSound);
+                    if (OnDeadDestroy) GameObject.Destroy(this.gameObject);
+                    if (OnDeadSetWalkable) Entity.IsWalkable = true;
+                    if (EntityDead != null) EntityDead(this.transform.position);
                 }
                 LastAttacker = from.Entity;
             }
@@ -151,6 +153,23 @@ namespace Dungeon
             foreach (var s in sprites)
             {
                 s.color = Color.white;
+            }
+        }
+
+        public void EntityTurnStart(EntityAction current)
+        {
+            // use auto healing
+            _currentRegenerationProgress += RegenerationSpeed * 1f; //1 turn
+            if (_currentRegenerationProgress > 1f)
+            {
+                int chp = (int)CurrentHitPoints;
+                CurrentHitPoints += (int)_currentRegenerationProgress;
+                CurrentHitPoints = Mathf.Min(CurrentHitPoints, MaxHitPoints);
+                if ((int)CurrentHitPoints - chp > 0)
+                {
+                    TextMeshSpawner.SpawnTextMesh("+ " + ((int)CurrentHitPoints - chp) + "HP", Color.red, TextMeshSpawner.DefaultFadeOutTime);
+                }
+                _currentRegenerationProgress -= (int)_currentRegenerationProgress;
             }
         }
     }
