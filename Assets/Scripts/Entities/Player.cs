@@ -135,5 +135,16 @@ namespace Dungeon
             Entity.enabled = false;
         }
 
+        public void ToggleInventoryDialog()
+        {
+            //if (!InventoryDialog.activeSelf)
+            //{
+            //    InventoryDialog.SetActive(true);
+            //    var invpanel = InventoryDialog.GetComponent<InventoryPanel>();
+            //    invpanel.SetupInventoryComponent(this.GetComponent<Inventory>(), null);
+            //}
+            //else InventoryDialog.SetActive(false);
+            this.GetComponent<Inventory>().ToggleInventoryDialog(null);
+        }
     }
 }

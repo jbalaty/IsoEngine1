@@ -6,14 +6,14 @@ namespace Dungeon
 {
     public class Chest : ObjectComponent
     {
+        Inventory Inventory;
 
         void Start()
         {
             GetComponentInChildren<Animator>().SetBool("IsOpen", Value == 1);
-            var inventory = GetComponent<Inventory>();
-            if (inventory != null)
+            Inventory = GetComponent<Inventory>();
             {
-                inventory.AddItem(new Items.Gold(), Random.Range(0, 11));
+                Inventory.AddItem(Items.ItemsDatabase.Instance.FindByName("Gold"), Random.Range(1, 11));
             }
         }
 
@@ -22,12 +22,16 @@ namespace Dungeon
         {
             if (Value == 0)
             {
-                audio.PlayOneShot(InteractionSound1);
+                Utils.PlayClip(InteractionSound1);
                 Value = 1;
+                if (Inventory != null)
+                {
+                    Inventory.ToggleInventoryDialog( e.GetComponent<Inventory>());
+                }
             }
             else
             {
-                audio.PlayOneShot(InteractionSound2);
+                Utils.PlayClip(InteractionSound2);
                 Value = 0;
             }
             GetComponentInChildren<Animator>().SetBool("IsOpen", Value == 1);

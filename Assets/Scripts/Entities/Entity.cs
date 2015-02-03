@@ -9,6 +9,7 @@ namespace Dungeon
     {
         public static EntityAction NoAction = new EntityAction("NoAction");
 
+        public string Name;
         public EntitiesManager EntitiesManager;
         [SerializeField]
         public EntityAction CurrentAction = Entity.NoAction;
@@ -23,7 +24,7 @@ namespace Dungeon
         public Vector2Int StartPosition;
         public event System.Action<EntityAction> EntityTurnStart;
         public event System.Action<EntityAction> EntityTurnEnd;
-
+        
 
         protected void Awake()
         {

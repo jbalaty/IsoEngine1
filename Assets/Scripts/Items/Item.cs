@@ -5,8 +5,11 @@ using System.Collections.Generic;
 
 namespace Dungeon.Items
 {
+    public enum EItemType { GeneralItem, Money, Weapon, Armor, Potion, Necklace, Ring, Scroll}
     public enum EItemBonusApplicationType { Use, Equip, HaveInInventory };
 
+
+    [Serializable]
     public class ItemBonus
     {
         public EItemBonusApplicationType ApplicationType;
@@ -29,11 +32,18 @@ namespace Dungeon.Items
     [Serializable]
     public class Item
     {
+        public int ID;
+        public EItemType Type = EItemType.GeneralItem;
         public bool IsStackable = true;
+        public bool IsQuestItem = false;
         public int MaxDurability = -1;
         public string Name = "Item";
         public string Description = "Some item";
+        public Sprite Icon;
+        public Transform WorldObject;
+        public AudioClip PickupSound;
         public List<ItemBonus> Bonuses = new List<ItemBonus>();
+
 
         public override string ToString()
         {

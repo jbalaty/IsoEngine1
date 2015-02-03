@@ -14,14 +14,31 @@ namespace Dungeon
         Nothing, UI, GameMap, GameObject
     }
 
+    [System.Serializable]
+    public struct Dialogs
+    {
+        public GameObject ObjectsInventoryDialog;
+    }
+
     //[ExecuteInEditMode()]
     public class GameController : MonoBehaviour
     {
+        static GameController _Instance;
+        public static GameController Instance
+        {
+            get {
+                if (_Instance == null)
+                {
+                    _Instance = GameObject.FindObjectOfType<GameController>();
+                }
+                return _Instance; }
+        }
+
         public DungeonMapManager MapManager;
         public EntitiesManager EntitiesManager;
         public GameObject MapObject;
         public GameObject Player;
-
+        public Dialogs Dialogs;
 
 
         #region input handling vars
@@ -70,6 +87,9 @@ namespace Dungeon
                     }
                 }
             }
+#if !UNITY_EDITOR
+            this.DebugHighlightNotWalkableTiles = false;
+#endif
         }
 
         // Update is called once per frame
@@ -87,44 +107,52 @@ namespace Dungeon
             // MOUSE BUTTON UP
             if (Input.GetMouseButtonUp(0))
             {
-                var coords = GetTilePositionFromMouse(Input.mousePosition);
-                if (coords.HasValue && (Time.time - _timeOfLastClick) >= 0.5f)
+                if (!IsUIHit())
                 {
-                    Debug.Log("Mouse pick: " + coords);
-                    var entities = EntitiesManager.GetEntitiesOnPosition(coords.Value);
-                    // try to find combat entity
-                    var someAction = false;
-                    var endTurn = false;
-                    foreach (var e in entities)
+                    var coords = GetTilePositionFromMouse(Input.mousePosition);
+                    if (coords.HasValue && (Time.time - _timeOfLastClick) >= 0.5f)
                     {
-                        if (e.enabled && e.GetComponent<Combat>() != null)
+                        Debug.Log("Mouse pick: " + coords);
+                        var entities = EntitiesManager.GetEntitiesOnPosition(coords.Value);
+                        // try to find combat entity
+                        var someAction = false;
+                        var endTurn = false;
+                        foreach (var e in entities)
                         {
-                            Player.GetComponent<Player>().Attack(e);
-                            someAction = true;
-                            endTurn = true;
-                        } else if (e.enabled && e.GetComponent<ObjectComponent>() != null
-                          && e.GetComponent<ObjectComponent>().CanInteract(Player.GetComponent<Entity>()))
-                        {
-                            e.GetComponent<ObjectComponent>().Interact(Player.GetComponent<Entity>());
-                            someAction = true;
+                            if (e.enabled && e.GetComponent<Combat>() != null)
+                            {
+                                Player.GetComponent<Player>().Attack(e);
+                                someAction = true;
+                                endTurn = true;
+                            }
+                            else if (e.enabled && e.GetComponent<ObjectComponent>() != null
+                            && e.GetComponent<ObjectComponent>().CanInteract(Player.GetComponent<Entity>()))
+                            {
+                                e.GetComponent<ObjectComponent>().Interact(Player.GetComponent<Entity>());
+                                someAction = true;
+                            }
+                            if (someAction) break;
                         }
-                        if (someAction) break;
+                        if (!someAction && MapManager.IsTileWalkable(coords.Value
+                            , new PathFinderInfo(EntitiesManager.AllEntities)))
+                        {
+                            Player.GetComponent<Player>().MoveTo(coords.Value);
+                            HighlightTile(coords.Value);
+                            endTurn = true;
+                        }
+                        if (endTurn) NextTurn();
+                        _timeOfLastClick = Time.time;
+                        // if not, move there
                     }
-                    if (!someAction && MapManager.IsTileWalkable(coords.Value
-                        , new PathFinderInfo(EntitiesManager.AllEntities)))
-                    {
-                        Player.GetComponent<Player>().MoveTo(coords.Value);
-                        HighlightTile(coords.Value);
-                        endTurn = true;
-                    }
-                    if (endTurn) NextTurn();
-                    _timeOfLastClick = Time.time;
-                    // if not, move there
                 }
             }
             if (Input.GetKeyDown(KeyCode.Space) && !_SimulatingTurn)
             {
                 NextTurn();
+            }
+            else if (Input.GetKeyDown(KeyCode.I))
+            {
+                Player.GetComponent<Player>().ToggleInventoryDialog();
             }
         }
 

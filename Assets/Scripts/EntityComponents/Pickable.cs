@@ -32,7 +32,7 @@ namespace Dungeon
                 //Debug.Log("Picking " + this. Gold + " gold");
                 //entity.GetComponent<Inventory>().AddGold(this.Gold);
                 inventory.AddItem(this.Item, this.Amount);
-                if (this.Item is Gold)
+                if (this.Item.Type == EItemType.Money)
                 {
                     var tm = entity.GetComponent<TextMeshSpawner>();
                     if (tm != null)

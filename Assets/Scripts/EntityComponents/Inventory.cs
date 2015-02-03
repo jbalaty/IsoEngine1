@@ -9,12 +9,28 @@ namespace Dungeon
     [System.Serializable]
     public class InventoryItem
     {
-        public Item Item;
+        public int ItemID = 0;
         public float Amount = 0;
+
+        [System.NonSerialized]
+        Item _Item;
+        public Item Item
+        {
+            get
+            {
+                if (_Item == null)
+                {
+                    _Item = ItemsDatabase.Instance.FindByID(ItemID);
+                }
+                return _Item;
+            }
+            set { _Item = value; }
+        }
 
         public InventoryItem(Item item, float amount)
         {
             this.Item = item;
+            this.ItemID = item.ID;
             this.Amount = amount;
         }
     }
@@ -23,10 +39,10 @@ namespace Dungeon
     public class Inventory : MonoBehaviour
     {
         public bool PickItems = true;
-
+        public GameObject InventoryDialog;
 
         [SerializeField]
-        public List<InventoryItem> Items = new List<InventoryItem>();
+        List<InventoryItem> Items = new List<InventoryItem>();
 
         Entity Entity;
 
@@ -35,8 +51,20 @@ namespace Dungeon
         {
             get
             {
-                var invitem = Items.Find((ii) => ii.GetHashCode() == new Gold().GetHashCode());
-                return invitem != null ? (int)invitem.Amount : 0;
+                //var invitem = Items.Find((ii) => ii.GetHashCode() == new Gold().GetHashCode());
+                //return invitem != null ? (int)invitem.Amount : 0;
+                return 0;
+            }
+        }
+
+        void Awake()
+        {
+            if (InventoryDialog == null)
+            {
+                // try to find foreign invetory dialog
+                //InventoryDialog = GameObject.Find("Canvas");
+                //GameObject.FindGameObjectWithTag("Dialog_ObjectsInventory")
+                InventoryDialog = GameController.Instance.Dialogs.ObjectsInventoryDialog;
             }
         }
 
@@ -49,7 +77,7 @@ namespace Dungeon
             //var xx = g1 == g2;
             //var xxx = g1.Equals(g2);
             //var a = 123;
-            AddItem(new Gold(), 0);
+            //AddItem(new Gold(), 0);
         }
 
         // Update is called once per frame
@@ -58,7 +86,12 @@ namespace Dungeon
             Entity = this.GetComponent<Entity>();
         }
 
-        public void AddItem(Item item, float amount)
+        public List<InventoryItem> GetItems()
+        {
+            return Items;
+        }
+
+        public float AddItem(Item item, float amount)
         {
             /*if (item is Gold)
             {
@@ -80,6 +113,35 @@ namespace Dungeon
                     Items.Add(new InventoryItem(item, amount));
                 }
             }
+            else if (amount < 0f)
+            {
+                var pamount = amount * -1;
+                var ii = FindItem(item);
+                if (ii != null)
+                {
+                    if (ii.Amount >= pamount)
+                    {
+                        ii.Amount -= pamount;
+                        return amount;
+                    }
+                    else
+                    {
+                        var r = (pamount - ii.Amount) * -1;
+                        ii.Amount = 0f;
+                        return r;
+                    }
+                }
+                else
+                {
+                    return 0f;
+                }
+            }
+            return 0;
+        }
+
+        public void CompactItems()
+        {
+            Items.RemoveAll((ii) => ii.Amount < 0.001f);
         }
 
         protected InventoryItem FindItem(Item it, float amount = 1f)
@@ -95,6 +157,34 @@ namespace Dungeon
                 return foundItems[0];
             }
             return null;
+        }
+
+        public bool ToggleInventoryDialog(Inventory targetInv)
+        {
+            if (InventoryDialog != null)
+            {
+                if (!InventoryDialog.activeSelf)
+                {
+                    InventoryDialog.SetActive(true);
+                    var invpanel = InventoryDialog.GetComponent<InventoryPanel>();
+                    invpanel.SetupInventoryComponent(this, targetInv);
+                    if (targetInv == null)
+                    {
+                        invpanel.SetName("Inventory - " + Entity.Name);
+                    }
+                    else
+                    {
+                        invpanel.SetName(Entity.Name);
+                    }
+                    return true;
+                }
+                else
+                {
+                    InventoryDialog.SetActive(false);
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

@@ -133,10 +133,8 @@ namespace Dungeon
         }
 
         // specific entities functions, dont know where to put them
-        public Transform GoldPile;
-        public Transform HealingPotion;
         public Transform TextMesh;
-        public AudioClip GoldLootSound;
+        /*public AudioClip GoldLootSound;
         public AudioClip PotionLootSound;
 
 
@@ -144,19 +142,19 @@ namespace Dungeon
         {
             var spawn = Instantiate(GoldPile, coords.Vector3(EVectorComponents.XZ), Quaternion.identity) as Transform;
             spawn.parent = this.transform;
-            spawn.GetComponent<Pickable>().Item = new Gold();
+            spawn.GetComponent<Pickable>().Item = ItemsDatabase.Instance.FindByName("Gold");
             spawn.GetComponent<Pickable>().Amount = amount;
             return spawn.GetComponent<Entity>();
         }
 
-        public Entity SpawnHealingPotion(Vector2Int coords)
+        public Entity SpawnMinorHealingPotion(Vector2Int coords)
         {
             var spawn = Instantiate(HealingPotion, coords.Vector3(EVectorComponents.XZ), Quaternion.identity) as Transform;
             spawn.parent = this.transform;
-            spawn.GetComponent<Pickable>().Item = new SmallHealingPotion();
+            spawn.GetComponent<Pickable>().Item = ItemsDatabase.Instance.FindByName("MinorHealingPotion");
             spawn.GetComponent<Pickable>().Amount = 1f;
             return spawn.GetComponent<Entity>();
-        }
+        }*/
     }
 
 }

@@ -2,8 +2,8 @@
 using UnityEditor;
 using System.Collections;
 
-[CustomPropertyDrawer(typeof(Dungeon.InventoryItem))]
-[ExecuteInEditMode]
+//[CustomPropertyDrawer(typeof(Dungeon.InventoryItem))]
+//[ExecuteInEditMode]
 public class InventoryItemDrawer : PropertyDrawer
 {
 
