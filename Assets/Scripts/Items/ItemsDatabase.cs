@@ -32,7 +32,7 @@ namespace Dungeon.Items
 
         public Item FindByID(int id)
         {
-            return Items[id];
+            return Items.Find((i) => i.ID == id);
         }
         // Use this for initialization
         void Start()

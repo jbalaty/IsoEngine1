@@ -7,7 +7,13 @@ using System.Collections.Generic;
 
 namespace Dungeon
 {
-    public class InventoryPanel : MonoBehaviour, IInventoryPanel
+    public interface IInventoryPanel
+    {
+        void Setup(Inventory inv1, Inventory inv2);
+        void SetName(string name);
+    }
+
+    public class PlayerInventoryPanel : MonoBehaviour, IInventoryPanel
     {
         Inventory SourceInventory;
         Inventory TargetInventory;
@@ -35,7 +41,7 @@ namespace Dungeon
 
         void ItemsPanel_ItemActionButton1ClickedEvent(InventoryItem obj)
         {
-            Take(obj);
+            ShowDetail(obj);
         }
 
         public void Refresh()
@@ -100,6 +106,15 @@ namespace Dungeon
             ItemDetailSlider.value = ItemDetailSlider.maxValue = ii.Amount;
             ItemDetailText = ItemDetail.transform.FindChild("Amount").GetComponent<Text>();
             ItemDetailText.text = ItemDetailSlider.value + " / " + ii.Amount;
+            // action buttons
+            var actionButtons = ItemDetail.transform.FindChild("ActionButtons").GetComponent<HorizontalLayoutGroup>();
+            foreach (Transform t in actionButtons.transform) t.gameObject.SetActive(false);
+            var useButton = actionButtons.transform.Find("UseButton").GetComponent<Button>();
+            var equipButton = actionButtons.transform.Find("EquipButton").GetComponent<Button>();
+            if (ii.Item.Type == Items.EItemType.Potion)
+            {
+                useButton.gameObject.SetActive(true);
+            }
             ToggleDetail(true);
         }
 
@@ -114,6 +129,27 @@ namespace Dungeon
             Take(ItemDetailInventoryItem, ItemDetailSlider.value);
         }
 
+        public void OnUseItem()
+        {
+            if (ItemDetailInventoryItem.Item.Type == Items.EItemType.Potion)
+            {
+                var bonusApplicator = SourceInventory.GetComponent<BonusApplicator>();
+                if (bonusApplicator != null)
+                {
+                    var result = bonusApplicator.ApplyBonus(ItemDetailInventoryItem.Item, Items.EItemBonusApplicationType.Use);
+                    if (result) //bonus succesfully applied 
+                    {
+                        SourceInventory.AddItem(ItemDetailInventoryItem.Item, -ItemDetailInventoryItem.Item.UnitAmount);
+                    }
+                }
+            }
+            Refresh();
+        }
+
+        public void OnEquip()
+        {
+
+        }
         public void SetName(string objname)
         {
             this.transform.Find("Title").GetComponent<Text>().text = objname;

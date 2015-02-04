@@ -5,8 +5,8 @@ using System.Collections.Generic;
 
 namespace Dungeon.Items
 {
-    public enum EItemType { GeneralItem, Money, Weapon, Armor, Potion, Necklace, Ring, Scroll}
-    public enum EItemBonusApplicationType { Use, Equip, HaveInInventory };
+    public enum EItemType { GeneralItem, Money, Weapon, Armor, Potion, Necklace, Ring, Scroll }
+    public enum EItemBonusApplicationType { None, Use, Equip, HaveInInventory };
 
 
     [Serializable]
@@ -39,6 +39,7 @@ namespace Dungeon.Items
         public int MaxDurability = -1;
         public string Name = "Item";
         public string Description = "Some item";
+        public float UnitAmount = 1f;
         public Sprite Icon;
         public Transform WorldObject;
         public AudioClip PickupSound;

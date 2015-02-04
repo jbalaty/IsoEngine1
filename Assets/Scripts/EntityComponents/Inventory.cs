@@ -91,7 +91,12 @@ namespace Dungeon
             return Items;
         }
 
-        public float AddItem(Item item, float amount)
+        public int ItemsCount
+        {
+            get { return Items.Count; }
+        }
+
+        public InventoryItem AddItem(Item item, float amount)
         {
             /*if (item is Gold)
             {
@@ -101,9 +106,10 @@ namespace Dungeon
             {
                 InnerAddItem(item);
             }*/
+            InventoryItem ii = null;
             if (amount > 0f)
             {
-                var ii = FindItem(item);
+                ii = FindItem(item);
                 if (ii != null && item.IsStackable)
                 {
                     ii.Amount += amount;
@@ -116,27 +122,22 @@ namespace Dungeon
             else if (amount < 0f)
             {
                 var pamount = amount * -1;
-                var ii = FindItem(item);
+                ii = FindItem(item);
                 if (ii != null)
                 {
                     if (ii.Amount >= pamount)
                     {
                         ii.Amount -= pamount;
-                        return amount;
                     }
                     else
                     {
                         var r = (pamount - ii.Amount) * -1;
                         ii.Amount = 0f;
-                        return r;
                     }
                 }
-                else
-                {
-                    return 0f;
-                }
             }
-            return 0;
+            CompactItems();
+            return ii;
         }
 
         public void CompactItems()
@@ -166,8 +167,10 @@ namespace Dungeon
                 if (!InventoryDialog.activeSelf)
                 {
                     InventoryDialog.SetActive(true);
-                    var invpanel = InventoryDialog.GetComponent<InventoryPanel>();
-                    invpanel.SetupInventoryComponent(this, targetInv);
+                    //var i = InventoryDialog.GetComponent(typeof(IInventoryPanel));
+                    //var invpanel = Utils.GetInterface<IInventoryPanel>(InventoryDialog);
+                    var invpanel = InventoryDialog.GetComponent(typeof(IInventoryPanel)) as IInventoryPanel;
+                    invpanel.Setup(this, targetInv);
                     if (targetInv == null)
                     {
                         invpanel.SetName("Inventory - " + Entity.Name);
