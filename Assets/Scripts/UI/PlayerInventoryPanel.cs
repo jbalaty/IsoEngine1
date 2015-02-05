@@ -23,6 +23,7 @@ namespace Dungeon
         public GameObject ItemDetail;
         Slider ItemDetailSlider;
         Text ItemDetailText;
+        Button DropButton;
         InventoryItem ItemDetailInventoryItem;
 
         // Use this for initialization
@@ -104,6 +105,7 @@ namespace Dungeon
             name.text = ii.Item.Name;
             var desc = ItemDetail.transform.FindChild("Description").GetComponent<Text>();
             desc.text = "" + ii.Item.Description;
+            DropButton = ItemDetail.transform.FindChild("DropButton").GetComponent<Button>();
             ItemDetailSlider = ItemDetail.transform.FindChild("Slider").GetComponent<Slider>();
             ItemDetailSlider.value = ItemDetailSlider.maxValue = ii.Amount;
             ItemDetailText = ItemDetail.transform.FindChild("Amount").GetComponent<Text>();
@@ -133,8 +135,13 @@ namespace Dungeon
 
         public void OnSliderChange()
         {
+            var enabled = false;
             if (ItemDetailText != null)
+            {
                 ItemDetailText.text = ItemDetailSlider.value + " / " + ItemDetailInventoryItem.Amount;
+                enabled = ItemDetailSlider.value > 0f;
+            }
+            DropButton.interactable = enabled;
         }
 
         public void OnDetailDrop()

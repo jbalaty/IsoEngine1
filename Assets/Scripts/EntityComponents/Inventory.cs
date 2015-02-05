@@ -40,6 +40,7 @@ namespace Dungeon
     {
         public bool PickItems = true;
         public GameObject InventoryDialog;
+        EffectsApplicator EffectsApplicator;
 
         [SerializeField]
         List<InventoryItem> Items = new List<InventoryItem>();
@@ -66,6 +67,7 @@ namespace Dungeon
                 //GameObject.FindGameObjectWithTag("Dialog_ObjectsInventory")
                 InventoryDialog = GameController.Instance.Dialogs.ObjectsInventoryDialog;
             }
+            EffectsApplicator = this.GetComponent<EffectsApplicator>();
         }
 
         // Use this for initialization
@@ -190,9 +192,20 @@ namespace Dungeon
             return false;
         }
 
-        public bool UseItem(Item item, float amount = -1)
+        public bool UseItem(Item item, float? amount = null)
         {
             var result = false;
+            var ii = FindItem(item);
+            if (item != null && EffectsApplicator != null)
+            {
+                amount = amount ?? ii.Item.UnitAmount;
+                ii = AddItem(ii.Item, -amount.Value);
+                if (ii != null)
+                {
+                    result = EffectsApplicator.ApplyEffect(ii.Item, EItemEffectApplicationType.Use);
+                }
+            }
+            else throw new Exception("Cannot find '" + item + "' in inventory");
             return result;
         }
 
@@ -202,11 +215,17 @@ namespace Dungeon
             var ii = FindItem(item);
             if (item != null)
             {
-                var newii = AddItem(ii.Item, -amount);
-                return newii;
+                var oldamount = ii.Amount;
+                ii = AddItem(ii.Item, -amount);
+                var dropamount = oldamount - ii.Amount;
+                if (dropamount > 0f)
+                {
+                    ItemsDatabase.Instance.SpawnWorldItem(this.Entity.GetTilePosition(), ii.ItemID, dropamount);
+                    Utils.PlayClip(ii.Item.DropSound);
+                }
+                return ii;
             }
             else throw new Exception("Cannot find '" + item + "' in inventory");
-            return null;
         }
     }
 }
