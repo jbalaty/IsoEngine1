@@ -66,5 +66,6 @@ public class DragMeSimple : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
             Destroy(m_DraggingIcon);
         var rcResults = new List<RaycastResult>();
         EventSystem.current.RaycastAll(eventData, rcResults);
+        if (DragResult != null) DragResult(rcResults);
     }
 }

@@ -28,7 +28,6 @@ namespace Dungeon
             var inventory = entity.GetComponent<Inventory>();
             if (inventory != null && inventory.PickItems)
             {
-                Utils.PlayClip(PickupSound);
                 //Debug.Log("Picking " + this. Gold + " gold");
                 //entity.GetComponent<Inventory>().AddGold(this.Gold);
                 inventory.AddItem(this.Item, this.Amount);
@@ -40,8 +39,8 @@ namespace Dungeon
                         tm.SpawnTextMesh("+ " + this.Amount + "G", Color.yellow, TextMeshSpawner.DefaultFadeOutTime);
                     }
                 }
+                Utils.PlayClip(Item.PickupSound ?? PickupSound);
                 Destroy(this.gameObject);
-                Utils.PlayClip(PickupSound);
             }
         }
 

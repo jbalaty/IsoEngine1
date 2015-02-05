@@ -5,8 +5,6 @@ using System;
 
 namespace Dungeon
 {
-
-
     [RequireComponent(typeof(AudioSource))]
     public class Combat : MonoBehaviour
     {
@@ -27,8 +25,10 @@ namespace Dungeon
         public AudioClip HitSound;
         public AudioClip AttackSound;
 
+
         public event Action<Vector3> EntityDead;
 
+        public HealthIndicator HealthIndicator;
         Entity Entity;
         TextMeshSpawner TextMeshSpawner;
 
@@ -52,7 +52,13 @@ namespace Dungeon
             Entity.EntityTurnStart += EntityTurnStart;
         }
 
-
+        void Update()
+        {
+            if (HealthIndicator != null)
+            {
+                HealthIndicator.SetHealth((int)CurrentHitPoints, MaxHitPoints);
+            }
+        }
 
         public int TakeDamage(float damage, Combat from)
         {

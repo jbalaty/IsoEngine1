@@ -11,6 +11,7 @@ public class CameraController : MonoBehaviour
     public float MinZoom = 1;
     public float MaxZoom = 10;
     public float CameraMovementSpeed = 0.5f;
+    [HideInInspector]
     public float CameraStartOrthoSize;
     public Dungeon.GameController GameController;
 

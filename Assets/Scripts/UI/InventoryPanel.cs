@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -14,6 +13,7 @@ namespace Dungeon
 
         public PlayerInventoryPanelItems ItemsPanel;
         public Transform ContentListItemPrefab;
+        public bool CloseIfEmpty = true;
 
         public GameObject ItemDetail;
         Slider ItemDetailSlider;
@@ -76,6 +76,8 @@ namespace Dungeon
             SourceInventory.CompactItems();
             ItemsPanel.Clear();
             this.gameObject.SetActive(false);
+            Refresh();
+            if (CloseIfEmpty && SourceInventory.ItemsCount == 0) ToggleDialog(false);
         }
 
         public void Take(InventoryItem ii, float amount = -1)
@@ -85,6 +87,7 @@ namespace Dungeon
             TargetInventory.AddItem(ii.Item, -(amount - realAmountRemoved.Amount));
             SourceInventory.CompactItems();
             Refresh();
+            if (CloseIfEmpty && SourceInventory.ItemsCount == 0) ToggleDialog(false);
         }
 
         public void ShowDetail(InventoryItem ii)
@@ -117,6 +120,10 @@ namespace Dungeon
         public void SetName(string objname)
         {
             this.transform.Find("Title").GetComponent<Text>().text = objname;
+        }
+        public void ToggleDialog(bool show)
+        {
+            this.gameObject.SetActive(show);
         }
     }
 }

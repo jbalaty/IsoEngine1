@@ -6,13 +6,13 @@ using System.Collections.Generic;
 namespace Dungeon.Items
 {
     public enum EItemType { GeneralItem, Money, Weapon, Armor, Potion, Necklace, Ring, Scroll }
-    public enum EItemBonusApplicationType { None, Use, Equip, HaveInInventory };
+    public enum EItemEffectApplicationType { None, Use, Equip, HaveInInventory };
 
 
     [Serializable]
-    public class ItemBonus
+    public class ItemEffect
     {
-        public EItemBonusApplicationType ApplicationType;
+        public EItemEffectApplicationType ApplicationType;
         public string AttributeName;
         public float Value;
 
@@ -42,8 +42,11 @@ namespace Dungeon.Items
         public float UnitAmount = 1f;
         public Sprite Icon;
         public Transform WorldObject;
+        public AudioClip DropSound;
         public AudioClip PickupSound;
-        public List<ItemBonus> Bonuses = new List<ItemBonus>();
+        public AudioClip UseSound;
+        public AudioClip EquipSound;
+        public List<ItemEffect> Effects = new List<ItemEffect>();
 
 
         public override string ToString()
@@ -54,7 +57,7 @@ namespace Dungeon.Items
         public override int GetHashCode()
         {
             var result = Name.GetHashCode();
-            foreach (var b in Bonuses)
+            foreach (var b in Effects)
             {
                 result += b.GetHashCode();
             }

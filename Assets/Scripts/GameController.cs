@@ -26,12 +26,14 @@ namespace Dungeon
         static GameController _Instance;
         public static GameController Instance
         {
-            get {
+            get
+            {
                 if (_Instance == null)
                 {
                     _Instance = GameObject.FindObjectOfType<GameController>();
                 }
-                return _Instance; }
+                return _Instance;
+            }
         }
 
         public DungeonMapManager MapManager;
@@ -39,7 +41,7 @@ namespace Dungeon
         public GameObject MapObject;
         public GameObject Player;
         public Dialogs Dialogs;
-
+        public GameObject HelpPanel;
 
         #region input handling vars
         /*GridObject LastMouseUpMapObject;
@@ -87,15 +89,16 @@ namespace Dungeon
                     }
                 }
             }
-#if !UNITY_EDITOR
-            this.DebugHighlightNotWalkableTiles = false;
-#endif
+
+            HelpPanel = GameObject.Find("HelpPanel");
         }
 
         // Update is called once per frame
         void Update()
         {
-            DebugHighlightNotWalkableTiles(true);
+#if !UNITY_EDITOR
+                    DebugHighlightNotWalkableTiles(true);
+#endif
             //UpdateInputTouch();
             // if mouseDown is on GUI do nothing (GUI will handle that)
             // if mouseUp is on GUI do nothing
@@ -109,10 +112,10 @@ namespace Dungeon
             {
                 if (!IsUIHit())
                 {
+                    Debug.Log("GameController - MouseButtonUp - "+Input.mousePosition);
                     var coords = GetTilePositionFromMouse(Input.mousePosition);
                     if (coords.HasValue && (Time.time - _timeOfLastClick) >= 0.5f)
                     {
-                        Debug.Log("Mouse pick: " + coords);
                         var entities = EntitiesManager.GetEntitiesOnPosition(coords.Value);
                         // try to find combat entity
                         var someAction = false;
@@ -154,6 +157,10 @@ namespace Dungeon
             {
                 Player.GetComponent<Player>().ToggleInventoryDialog();
             }
+            else if (Input.GetKeyDown(KeyCode.H))
+            {
+                HelpPanel.SetActive(!HelpPanel.activeSelf);
+            }
         }
 
         public Vector2Int? GetTilePositionFromMouse(Vector3 mousePosition)
@@ -172,14 +179,16 @@ namespace Dungeon
             }
             return null;
         }
+        
         bool IsUIHit()
         {
-            PointerEventData pe = new PointerEventData(EventSystem.current);
-            pe.position = Input.mousePosition;
-            List<RaycastResult> hits = new List<RaycastResult>();
-            EventSystem.current.RaycastAll(pe, hits);
-            //if (hits.Count > 0) Debug.Log("UI Hit!!!");
-            return hits.Count > 0;
+            //PointerEventData pe = new PointerEventData(EventSystem.current);
+            //pe.position = Input.mousePosition;
+            //List<RaycastResult> hits = new List<RaycastResult>();
+            //EventSystem.current.RaycastAll(pe, hits);
+            ////if (hits.Count > 0) Debug.Log("UI Hit!!!");
+            //return hits.Count > 0;
+            return EventSystem.current.IsPointerOverGameObject();
         }
 
         public void HighlightTile(Vector2Int coords)

@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -71,25 +70,25 @@ namespace Dungeon
             Refresh();
         }
 
-        public void TakeAll()
-        {
-            foreach (var ii in SourceInventory.GetItems())
-            {
-                var amount = -ii.Amount;
-                var realAmountRemoved = SourceInventory.AddItem(ii.Item, -ii.Amount);
-                TargetInventory.AddItem(ii.Item, -(amount - realAmountRemoved.Amount));
-            }
-            SourceInventory.CompactItems();
-            ItemsPanel.Clear();
-            this.gameObject.SetActive(false);
-        }
+        //public void TakeAll()
+        //{
+        //    foreach (var ii in SourceInventory.GetItems())
+        //    {
+        //        var amount = -ii.Amount;
+        //        var realAmountRemoved = SourceInventory.AddItem(ii.Item, -ii.Amount);
+        //        TargetInventory.AddItem(ii.Item, -(amount - realAmountRemoved.Amount));
+        //    }
+        //    SourceInventory.CompactItems();
+        //    ItemsPanel.Clear();
+        //    this.gameObject.SetActive(false);
+        //}
 
-        public void Take(InventoryItem ii, float amount = -1)
+        public void Drop(InventoryItem ii, float amount)
         {
-            amount = amount >= 0 ? Mathf.Max(-amount, -ii.Amount) : -ii.Amount;
-            var realAmountRemoved = SourceInventory.AddItem(ii.Item, amount);
-            TargetInventory.AddItem(ii.Item, -(amount - realAmountRemoved.Amount));
-            SourceInventory.CompactItems();
+            if (ii != null)
+            {
+                SourceInventory.DropItem(ii.Item, amount);
+            }
             Refresh();
         }
 
@@ -98,6 +97,9 @@ namespace Dungeon
             ItemDetailInventoryItem = ii;
             var img = ItemDetail.transform.FindChild("Image").GetComponent<Image>();
             img.sprite = ii.Item.Icon;
+            var drag = img.GetComponent<DragMeSimple>();
+            drag.DragResult -= drag_DragResult;
+            drag.DragResult += drag_DragResult;
             var name = ItemDetail.transform.FindChild("Name").GetComponent<Text>();
             name.text = ii.Item.Name;
             var desc = ItemDetail.transform.FindChild("Description").GetComponent<Text>();
@@ -118,32 +120,40 @@ namespace Dungeon
             ToggleDetail(true);
         }
 
+        void drag_DragResult(List<UnityEngine.EventSystems.RaycastResult> obj)
+        {
+            foreach (var rcr in obj)
+            {
+                if (rcr.gameObject.name == "Quickbar")
+                {
+                    Debug.Log("Dragged intem in Quickbar");
+                }
+            }
+        }
+
         public void OnSliderChange()
         {
             if (ItemDetailText != null)
                 ItemDetailText.text = ItemDetailSlider.value + " / " + ItemDetailInventoryItem.Amount;
         }
 
-        public void OnDetailTake()
+        public void OnDetailDrop()
         {
-            Take(ItemDetailInventoryItem, ItemDetailSlider.value);
+            Drop(ItemDetailInventoryItem, ItemDetailSlider.value);
         }
 
         public void OnUseItem()
         {
-            if (ItemDetailInventoryItem.Item.Type == Items.EItemType.Potion)
-            {
-                var bonusApplicator = SourceInventory.GetComponent<BonusApplicator>();
-                if (bonusApplicator != null)
-                {
-                    var result = bonusApplicator.ApplyBonus(ItemDetailInventoryItem.Item, Items.EItemBonusApplicationType.Use);
-                    if (result) //bonus succesfully applied 
-                    {
-                        SourceInventory.AddItem(ItemDetailInventoryItem.Item, -ItemDetailInventoryItem.Item.UnitAmount);
-                    }
-                }
-            }
+            var tmpItem = ItemDetailInventoryItem;
+            SourceInventory.UseItem(ItemDetailInventoryItem.Item);
+            SourceInventory.CompactItems();
             Refresh();
+            var ii = SourceInventory.FindItem(tmpItem.Item);
+            if (ii != null)
+            {
+                ItemDetailInventoryItem = ii;
+                ShowDetail(ii);
+            }
         }
 
         public void OnEquip()
@@ -154,5 +164,6 @@ namespace Dungeon
         {
             this.transform.Find("Title").GetComponent<Text>().text = objname;
         }
+
     }
 }

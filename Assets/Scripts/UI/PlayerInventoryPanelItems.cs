@@ -46,6 +46,7 @@ namespace Dungeon
             var newitem = Instantiate(ContentListItemPrefab) as Transform;
             newitem.name += "_" + Counter++;
             newitem.SetParent(ContentList.transform);
+            newitem.localScale = Vector3.one;
             var itemScript = newitem.GetComponent<PlayerInventoryPanelItem>();
             itemScript.ActionButton1ClickedEvent += ItemActionButton1Clicked;
             itemScript.ItemClickedEvent += ItemClicked;

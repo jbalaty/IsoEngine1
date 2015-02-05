@@ -145,7 +145,7 @@ namespace Dungeon
             Items.RemoveAll((ii) => ii.Amount < 0.001f);
         }
 
-        protected InventoryItem FindItem(Item it, float amount = 1f)
+        public InventoryItem FindItem(Item it, float amount = 1f)
         {
             var foundItems = Items.FindAll((ii) =>
             {
@@ -188,6 +188,25 @@ namespace Dungeon
                 }
             }
             return false;
+        }
+
+        public bool UseItem(Item item, float amount = -1)
+        {
+            var result = false;
+            return result;
+        }
+
+
+        public InventoryItem DropItem(Item item, float amount)
+        {
+            var ii = FindItem(item);
+            if (item != null)
+            {
+                var newii = AddItem(ii.Item, -amount);
+                return newii;
+            }
+            else throw new Exception("Cannot find '" + item + "' in inventory");
+            return null;
         }
     }
 }

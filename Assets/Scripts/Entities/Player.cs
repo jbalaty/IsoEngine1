@@ -32,13 +32,11 @@ namespace Dungeon
             Movement.MoveStart += Movement_MoveStart;
             Movement.MoveEnd += Movement_MoveEnd;
             Combat.EntityDead += OnDead;
-        }
-
-        void OnGUI()
-        {
-            var style = new GUIStyle();
-            GUI.Box(new Rect(10, 10, (Screen.width / 2) * (Combat.CurrentHitPoints / (float)Combat.MaxHitPoints), 20),
-                Combat.CurrentHitPoints + "/" + Combat.MaxHitPoints);//, style);
+            var inv = this.GetComponent<Inventory>();
+            if (inv != null)
+            {
+                inv.AddItem(Items.ItemsDatabase.Instance.FindByName("Gold"), 5f);
+            }
         }
 
         #region Movement events
