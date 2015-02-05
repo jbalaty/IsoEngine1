@@ -362,6 +362,9 @@ MonoBehaviour:
   InventoryItem:
     ItemID: 0
     Amount: 0
+    IsEquiped: 0
+  NormalItemColor: {r: .686274529, g: .419607848, b: .13333334, a: .701960802}
+  EquipedItemColor: {r: .752941191, g: .592156887, b: .176470593, a: .670588255}
 --- !u!222 &22254996
 CanvasRenderer:
   m_ObjectHideFlags: 1

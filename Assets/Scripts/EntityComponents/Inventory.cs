@@ -11,6 +11,7 @@ namespace Dungeon
     {
         public int ItemID = 0;
         public float Amount = 0;
+        public bool IsEquiped = false;
 
         [System.NonSerialized]
         Item _Item;
@@ -164,6 +165,11 @@ namespace Dungeon
             return null;
         }
 
+        public void ToggleInventoryDialog()
+        {
+            ToggleInventoryDialog(null);
+        }
+
         public bool ToggleInventoryDialog(Inventory targetInv)
         {
             if (InventoryDialog != null)
@@ -226,6 +232,24 @@ namespace Dungeon
                     Utils.PlayClip(ii.Item.DropSound);
                 }
                 return ii;
+            }
+            else throw new Exception("Cannot find '" + item + "' in inventory");
+        }
+
+        public bool EquipItem(Item item)
+        {
+            var result = false;
+            var ii = FindItem(item);
+            if (item != null)
+            {
+                var combat = this.GetComponent<Combat>();
+                if (combat != null)
+                {
+                    combat.EquipWeapon(item);
+                    ii.IsEquiped = true;
+                    result = true;
+                }
+                return result;
             }
             else throw new Exception("Cannot find '" + item + "' in inventory");
         }

@@ -28,6 +28,8 @@ namespace Dungeon
 
         public event Action<Vector3> EntityDead;
 
+
+
         public HealthIndicator HealthIndicator;
         Entity Entity;
         TextMeshSpawner TextMeshSpawner;
@@ -133,6 +135,12 @@ namespace Dungeon
 
         public int DealDamage(Combat enemy)
         {
+            var attackValue = this.AttackValue;
+            if (ActiveWeapon != null)
+            {
+                var attackeffect = ActiveWeapon.Effects.Find((e) => e.AttributeName.ToLower() == "attack");
+                attackValue += attackeffect.Value;
+            }
             int realDamageDealt = enemy.TakeDamage(AttackValue, this);
             if (!enemy.IsAlive)
             {
@@ -177,5 +185,18 @@ namespace Dungeon
                 _currentRegenerationProgress -= (int)_currentRegenerationProgress;
             }
         }
+
+
+        #region active weapon
+        // TODO: do this properly in Equipment component
+        Items.Item ActiveWeapon;
+        public void EquipWeapon(Items.Item item)
+        {
+            if (item.Type == Items.EItemType.Weapon)
+            {
+                ActiveWeapon = item;
+            }
+        }
+        #endregion
     }
 }

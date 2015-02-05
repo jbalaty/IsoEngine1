@@ -122,6 +122,10 @@ namespace Dungeon
             {
                 useButton.gameObject.SetActive(true);
             }
+            else if (ii.Item.Type == Items.EItemType.Weapon)
+            {
+                equipButton.gameObject.SetActive(true);
+            } 
             ToggleDetail(true);
         }
 
@@ -162,6 +166,15 @@ namespace Dungeon
             });
         }
 
+        public void OnEquipItem()
+        {
+            RememberDetailSelection(() =>
+            {
+                SourceInventory.EquipItem(ItemDetailInventoryItem.Item);
+                Refresh();
+            });
+        }
+
         public void RememberDetailSelection(System.Action innerProcedure)
         {
             // rember old selection
@@ -177,10 +190,6 @@ namespace Dungeon
             }
         }
 
-        public void OnEquip()
-        {
-
-        }
         public void SetName(string objname)
         {
             this.transform.Find("Title").GetComponent<Text>().text = objname;

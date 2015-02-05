@@ -36,8 +36,9 @@ namespace Dungeon
         {
             if (UnityEngine.Random.value < LootProbability)
             {
-                var typeIdx = UnityEngine.Random.Range(0, 2);
+                var typeIdx = UnityEngine.Random.Range(0, 2 + 1);
                 Entity entity = null;
+                typeIdx = 2;
                 if (typeIdx == 0)
                 {
                     int amount = Random.Range(this.MinGoldAmount, this.MaxGoldAmount + 1);
@@ -46,7 +47,10 @@ namespace Dungeon
                 else if (typeIdx == 1)
                 {
                     entity = Items.ItemsDatabase.Instance.SpawnWorldItems(this.Entity.GetTilePosition(), "Minor healing potion", 1f)[0];
-
+                }
+                else if (typeIdx == 2)
+                {
+                    entity = Items.ItemsDatabase.Instance.SpawnWorldItems(this.Entity.GetTilePosition(), "Dagger", 1f)[0];
                 }
                 if (entity != null
                     && entity.GetComponent<Pickable>() != null

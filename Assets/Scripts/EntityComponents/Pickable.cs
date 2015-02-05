@@ -7,6 +7,7 @@ namespace Dungeon
 {
     public class Pickable : MonoBehaviour, IEntityTrigger
     {
+        [HideInInspector]
         public Item Item;
         public float Amount;
         public AudioClip PickupSound;

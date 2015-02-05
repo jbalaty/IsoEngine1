@@ -15,6 +15,10 @@ namespace Dungeon
         protected Image Image;
         protected Text Name;
         protected Text Amount;
+        protected Image ItemPanel;
+
+        public Color NormalItemColor;
+        public Color EquipedItemColor;
 
         // Use this for initialization
         void Awake()
@@ -26,6 +30,7 @@ namespace Dungeon
             Image = this.transform.Find("Image").GetComponent<Image>();
             Name = this.transform.Find("Name").GetComponent<Text>();
             Amount = this.transform.Find("Image/Amount").GetComponent<Text>();
+            ItemPanel = this.GetComponent<Image>();
         }
 
         public void SetupItem(InventoryItem inventoryitem)
@@ -34,6 +39,7 @@ namespace Dungeon
             Image.sprite = inventoryitem.Item.Icon;
             Name.text = inventoryitem.Item.Name;
             Amount.text = "" + inventoryitem.Amount;
+            ItemPanel.color = inventoryitem.IsEquiped ? EquipedItemColor : NormalItemColor;
         }
 
         public void Take()

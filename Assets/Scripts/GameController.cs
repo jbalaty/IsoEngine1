@@ -91,13 +91,18 @@ namespace Dungeon
             }
 
             HelpPanel = GameObject.Find("HelpPanel");
+            StartCoroutine(Utils.WaitForSeconds(5f, () =>
+            {
+                this.HelpPanel.SetActive(false);
+            }));
         }
 
         // Update is called once per frame
         void Update()
         {
 #if !UNITY_EDITOR
-                    DebugHighlightNotWalkableTiles(true);
+            DebugHighlightNotWalkableTiles(true);
+            var audio = GetComponent<AudioSource>().mute = false;
 #endif
             //UpdateInputTouch();
             // if mouseDown is on GUI do nothing (GUI will handle that)
@@ -112,7 +117,7 @@ namespace Dungeon
             {
                 if (!IsUIHit())
                 {
-                    Debug.Log("GameController - MouseButtonUp - "+Input.mousePosition);
+                    Debug.Log("GameController - MouseButtonUp - " + Input.mousePosition);
                     var coords = GetTilePositionFromMouse(Input.mousePosition);
                     if (coords.HasValue && (Time.time - _timeOfLastClick) >= 0.5f)
                     {
@@ -179,7 +184,7 @@ namespace Dungeon
             }
             return null;
         }
-        
+
         bool IsUIHit()
         {
             //PointerEventData pe = new PointerEventData(EventSystem.current);
