@@ -90,7 +90,9 @@ namespace Dungeon
 
         public List<InventoryItem> GetItems()
         {
-            return Items;
+            var result = new List<InventoryItem>();
+            result.AddRange(Items);
+            return result;
         }
 
         public int ItemsCount
@@ -218,9 +220,9 @@ namespace Dungeon
                 var oldamount = ii.Amount;
                 ii = AddItem(ii.Item, -amount);
                 var dropamount = oldamount - ii.Amount;
-                if (dropamount > 0f)
+                if (dropamount > 0f && dropamount >= ii.Item.UnitAmount)
                 {
-                    ItemsDatabase.Instance.SpawnWorldItem(this.Entity.GetTilePosition(), ii.ItemID, dropamount);
+                    ItemsDatabase.Instance.SpawnWorldItems(this.Entity.GetTilePosition(), ii.ItemID, dropamount);
                     Utils.PlayClip(ii.Item.DropSound);
                 }
                 return ii;

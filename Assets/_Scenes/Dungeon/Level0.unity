@@ -34521,7 +34521,7 @@ MonoBehaviour:
     MaxDurability: -1
     Name: Gold
     Description: Gold coins
-    UnitAmount: 1
+    UnitAmount: 0
     Icon: {fileID: 21300088, guid: df0dfa93d322cb54b9a2ff3147194386, type: 3}
     WorldObject: {fileID: 426394, guid: e273ae0ee029db845b81d449ab1e0ee4, type: 2}
     DropSound: {fileID: 8300000, guid: ec9253e4c5bcede4d89b6225b4c1cca5, type: 3}

@@ -124,7 +124,6 @@ namespace Dungeon
             if (CanAttack(go))
             {
                 var enemy = go.GetComponent<Combat>();
-                //be.TakeDamage(AttackValue, this);
                 DealDamage(enemy);
                 if (AttackSound != null) audio.PlayOneShot(AttackSound);
                 result = true;
@@ -173,7 +172,7 @@ namespace Dungeon
                 CurrentHitPoints = Mathf.Min(CurrentHitPoints, MaxHitPoints);
                 if ((int)CurrentHitPoints - chp > 0)
                 {
-                    TextMeshSpawner.SpawnTextMesh("+ " + ((int)CurrentHitPoints - chp) + "HP", Color.red, TextMeshSpawner.DefaultFadeOutTime);
+                    TextMeshSpawner.SpawnTextMesh("+ " + ((int)CurrentHitPoints - chp) + "HP", Color.green, TextMeshSpawner.DefaultFadeOutTime);
                 }
                 _currentRegenerationProgress -= (int)_currentRegenerationProgress;
             }

@@ -13,7 +13,7 @@ namespace Dungeon.Items
         {
             get
             {
-                if(_instance == null)
+                if (_instance == null)
                 {
                     _instance = GameObject.FindObjectOfType<ItemsDatabase>();
                 }
@@ -37,7 +37,7 @@ namespace Dungeon.Items
         void Start()
         {
             // verify items
-            
+
         }
 
         // Update is called once per frame
@@ -46,22 +46,49 @@ namespace Dungeon.Items
 
         }
 
-        public Entity SpawnWorldItem(Vector2Int coords, string itemname, float amount)
-        {
-            var item = FindByName(itemname);
-            return SpawnWorldItem(coords, item, amount);
-        }
-
-        public Entity SpawnWorldItem(Vector2Int coords, int itemid, float amount)
+        public List<Entity> SpawnWorldItems(Vector2Int coords, int itemid, float amount)
         {
             var item = FindByID(itemid);
-            return SpawnWorldItem(coords, item, amount);
+            return SpawnWorldItems(coords, item, amount);
         }
 
-        Entity SpawnWorldItem(Vector2Int coords, Item item, float amount)
+        public List<Entity> SpawnWorldItems(Vector2Int coords, string itemName, float amount)
         {
+            var item = FindByName(itemName);
+            return SpawnWorldItems(coords, item, amount);
+        }
 
-            var spawn = Instantiate(item.WorldObject, coords.Vector3(EVectorComponents.XZ), Quaternion.identity) as Transform;
+        public List<Entity> SpawnWorldItems(Vector2Int coords, Item item, float amount)
+        {
+            var result = new List<Entity>();
+            //var item = FindByID(itemid);
+            if (item.UnitAmount == 0f)
+            {
+                // if item does not have unit amount, spawn one item the supplied amount
+                var e = SpawnWorldItemEntity(coords, item, amount);
+                result.Add(e);
+            }
+            else
+            {
+                // if item have to be divided into units, spawn several units according to total amount
+                for (var i = 0; i < (int)(amount / item.UnitAmount); i++)
+                {
+                    var e = SpawnWorldItemEntity(coords, item, item.UnitAmount);
+                    result.Add(e);
+                }
+            }
+            return result;
+        }
+
+        Entity SpawnWorldItemEntity(Vector2Int coords, Item item, float amount)
+        {
+            var randomVariation = Random.insideUnitSphere / 4f;
+            randomVariation.y = 0f;
+            randomVariation.x = Mathf.Abs(randomVariation.x);
+            randomVariation.z = Mathf.Abs(randomVariation.z);
+
+            var spawnPoint = coords.Vector3(EVectorComponents.XZ) + randomVariation;
+            var spawn = Instantiate(item.WorldObject, spawnPoint, Quaternion.identity) as Transform;
             spawn.parent = EntitiesManager.Instance.transform;
             var pickable = spawn.GetComponent<Pickable>();
             pickable.Item = item;

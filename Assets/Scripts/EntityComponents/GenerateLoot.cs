@@ -41,11 +41,11 @@ namespace Dungeon
                 if (typeIdx == 0)
                 {
                     int amount = Random.Range(this.MinGoldAmount, this.MaxGoldAmount + 1);
-                    entity = Items.ItemsDatabase.Instance.SpawnWorldItem(this.Entity.GetTilePosition(), "Gold", amount);
+                    entity = Items.ItemsDatabase.Instance.SpawnWorldItems(this.Entity.GetTilePosition(), "Gold", amount)[0];
                 }
                 else if (typeIdx == 1)
                 {
-                    entity = Items.ItemsDatabase.Instance.SpawnWorldItem(this.Entity.GetTilePosition(), "Minor healing potion", 1f);
+                    entity = Items.ItemsDatabase.Instance.SpawnWorldItems(this.Entity.GetTilePosition(), "Minor healing potion", 1f)[0];
 
                 }
                 if (entity != null

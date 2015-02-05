@@ -86,11 +86,14 @@ namespace Dungeon
 
         public void Drop(InventoryItem ii, float amount)
         {
-            if (ii != null)
+            if (ii != null && amount > 0f)
             {
-                SourceInventory.DropItem(ii.Item, amount);
+                RememberDetailSelection(() =>
+                {
+                    SourceInventory.DropItem(ii.Item, amount);
+                    Refresh();
+                });
             }
-            Refresh();
         }
 
         public void ShowDetail(InventoryItem ii)
@@ -151,10 +154,21 @@ namespace Dungeon
 
         public void OnUseItem()
         {
+            RememberDetailSelection(() =>
+            {
+                SourceInventory.UseItem(ItemDetailInventoryItem.Item);
+                SourceInventory.CompactItems();
+                Refresh();
+            });
+        }
+
+        public void RememberDetailSelection(System.Action innerProcedure)
+        {
+            // rember old selection
             var tmpItem = ItemDetailInventoryItem;
-            SourceInventory.UseItem(ItemDetailInventoryItem.Item);
-            SourceInventory.CompactItems();
-            Refresh();
+            // execute code
+            innerProcedure();
+            // try to select the item again
             var ii = SourceInventory.FindItem(tmpItem.Item);
             if (ii != null)
             {
