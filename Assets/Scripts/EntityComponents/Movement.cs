@@ -18,7 +18,15 @@ namespace Dungeon
         public Path CurrentPath;
         bool _isMoving = false;
         public float speed = 0.5f;
-        public bool MovingDone { get { return !_isMoving && (CurrentPath == null || CurrentPath.Count == 0); } }
+        public bool MovingDone
+        {
+            get
+            {
+                return !_isMoving && (
+                    CurrentPath == null || CurrentPath.Count == 0 
+                    /*|| !TargetTile.HasValue || TargetTile == GetTilePosition()*/);
+            }
+        }
         public MapProxy MapProxy { get { return Entity.MapProxy; } }
         public Vector2Int StartPosition;
         public Entity Entity;
@@ -64,13 +72,13 @@ namespace Dungeon
                         result = true;
                         StartCoroutine(MoveToPosition(nextposition.Vector3(EVectorComponents.XZ), () =>
                         {
-                            if (MoveEnd != null) MoveEnd(new Vector2Int(this.transform.position, EVectorComponents.XZ));
                             if (StateChange != null) StateChange(true);
                             if (CurrentPath.IsEmpty())
                             {
                                 //if (StateChange != null) StateChange(true);
                             }
                             Entity.EntitiesManager.EntityMoved(Entity, PreviousPosition, NextPosition);
+                            if (MoveEnd != null) MoveEnd(new Vector2Int(this.transform.position, EVectorComponents.XZ));
                         }));
                     }
                     else // if tile is not Movement
@@ -97,8 +105,8 @@ namespace Dungeon
                 yield return new WaitForFixedUpdate();
             }
             transform.position = nexttcoords;
-            if (onFinished != null) onFinished();
             this._isMoving = false;
+            if (onFinished != null) onFinished();
         }
 
         public Path SetTargetTile(Vector2Int? targettile, IEnumerable<Entity> collisionEntities = null)
@@ -127,7 +135,8 @@ namespace Dungeon
             var prev = nextposition;
             foreach (var n in CurrentPath)
             {
-                Debug.DrawLine(prev.Vector3(EVectorComponents.XZ) + new Vector3(.5f, 0f, .5f), n.Vector3(EVectorComponents.XZ) + new Vector3(.5f, 0f, .5f), Color.yellow, 0.2f);
+                Debug.DrawLine(prev.Vector3(EVectorComponents.XZ) + new Vector3(.5f, 0f, .5f),
+                    n.Vector3(EVectorComponents.XZ) + new Vector3(.5f, 0f, .5f), Color.yellow, 0.5f);
                 prev = n;
             }
             // DEBUG END

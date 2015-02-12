@@ -47,7 +47,7 @@ namespace Dungeon
 
         public Path FindPath(Vector2Int end, IEnumerable<Entity> collisionEntities = null)
         {
-            return MapManager.FindPath(Entity.GetTilePosition(), end,
+            return MapManager.FindPath(Entity.GetTilePosition(true), end,
                  new PathFinderInfo(collisionEntities ?? Entity.EntitiesManager.AllEntities));
         }
 

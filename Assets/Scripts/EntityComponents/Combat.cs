@@ -125,6 +125,10 @@ namespace Dungeon
             var result = false;
             if (CanAttack(go))
             {
+                // change direction to face the target
+                var dirvec = go.transform.position - this.transform.position;
+                var direction = Utils.GetDirectionFromVector(new Vector2Int(dirvec, EVectorComponents.XZ));
+                //this.GetComponent<Movement>().setd
                 var enemy = go.GetComponent<Combat>();
                 DealDamage(enemy);
                 if (AttackSound != null) audio.PlayOneShot(AttackSound);
@@ -141,7 +145,7 @@ namespace Dungeon
                 var attackeffect = ActiveWeapon.Effects.Find((e) => e.AttributeName.ToLower() == "attack");
                 attackValue += attackeffect.Value;
             }
-            int realDamageDealt = enemy.TakeDamage(AttackValue, this);
+            int realDamageDealt = enemy.TakeDamage(attackValue, this);
             if (!enemy.IsAlive)
             {
                 TextMeshSpawner.SpawnTextMesh("+ " + enemy.MaxHitPoints + "XP", Color.cyan, 1f);

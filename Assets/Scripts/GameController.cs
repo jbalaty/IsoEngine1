@@ -42,6 +42,8 @@ namespace Dungeon
         public GameObject Player;
         public Dialogs Dialogs;
         public GameObject HelpPanel;
+        [HideInInspector]
+        public GameLightManager LightManager;
 
         #region input handling vars
         /*GridObject LastMouseUpMapObject;
@@ -63,6 +65,10 @@ namespace Dungeon
             EntitiesManager = GameObject.Find("Entities").GetComponent<EntitiesManager>();
             MapObject = GameObject.Find("Map");
             MapManager = MapObject.GetComponent<DungeonMapManager>();
+            LightManager = this.GetComponent<GameLightManager>();
+            LightManager.MapManager = MapManager;
+            LightManager.GameController = this;
+
         }
         // Use this for initialization
         void Start()
@@ -89,6 +95,11 @@ namespace Dungeon
                     }
                 }
             }
+
+            Player.GetComponent<Combat>().EntityDead += (v) =>
+            {
+                StartCoroutine(FreeplayCoroutine());
+            };
 
             HelpPanel = GameObject.Find("HelpPanel");
             StartCoroutine(Utils.WaitForSeconds(5f, () =>
@@ -127,7 +138,10 @@ namespace Dungeon
                         var endTurn = false;
                         foreach (var e in entities)
                         {
-                            if (e.enabled && e.GetComponent<Combat>() != null)
+                            if (e == Player.GetComponent<Entity>())
+                            {
+                            }
+                            else if (e.enabled && e.GetComponent<Combat>() != null)
                             {
                                 Player.GetComponent<Player>().Attack(e);
                                 someAction = true;
@@ -166,6 +180,8 @@ namespace Dungeon
             {
                 HelpPanel.SetActive(!HelpPanel.activeSelf);
             }
+
+            EntityTurnsUpdate();
         }
 
         public Vector2Int? GetTilePositionFromMouse(Vector3 mousePosition)
@@ -206,10 +222,47 @@ namespace Dungeon
         }
 
 
+
+        float _TurnStartTime = 0f;
         public void NextTurn()
         {
-            EntitiesManager.PlanAllEntitiesAction();
-            EntitiesManager.ProcessAllEntitiesAction();
+            var tdiff = Time.time - _TurnStartTime;
+            if (tdiff >= 0.5f) // dont start next turn, if some is in progress
+            {
+                _TurnStartTime = Time.time;
+                EntitiesManager.PlanAllEntitiesAction();
+                EntitiesManager.ProcessAllEntitiesAction();
+            }
+            //var player = Player.GetComponent<Player>();
+            //if (!_WalkToPointCoroutineRunning)
+            //{
+            //    EntitiesManager.PlanAllEntitiesAction();
+            //    StartCoroutine(WalkToPointCoroutine(player));
+            //}
+        }
+
+        void EntityTurnsUpdate()
+        {
+            var player = Player.GetComponent<Player>();
+            var tdiff = Time.time - _TurnStartTime;
+            if (tdiff >= 0.5f && _TurnStartTime > 0f) // one turn is cca 0.5 second
+            {
+                var na = player.PlanNextAction();
+                if (na.Name == "MoveToPosition")
+                {
+                    NextTurn();
+                }
+            }
+        }
+
+        public IEnumerator FreeplayCoroutine()
+        {
+            while (true)
+            {
+                Debug.Log("Freeplay - next turn");
+                NextTurn();
+                yield return new WaitForSeconds(1.0f);
+            }
         }
 
         #region DEBUG FUNCTIONS

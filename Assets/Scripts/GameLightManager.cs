@@ -8,8 +8,10 @@ namespace Dungeon
 {
     public class GameLightManager : MonoBehaviour
     {
-
+        [HideInInspector]
         public DungeonMapManager MapManager;
+        [HideInInspector]
+        public GameController GameController;
         float[,] CurrentLightModifiers;
         float[,] NextLightModifiers;
         public bool Shadows = false;
@@ -18,60 +20,66 @@ namespace Dungeon
         void Start()
         {
             UpdateLight(new Vector2(this.transform.position.x, this.transform.position.z));
+        }
 
+        void Update()
+        {
+            UpdateLight(GameController.Player.transform.position);
         }
 
         #region Light/Shadow procedures
-        public void UpdateLight(Vector2 currentPosition)
+        public void UpdateLight(Vector3 currentPosition)
         {
             //Debug.Log("Update Light");
-            this.CurrentLightModifiers = ComputeLightModifiers(currentPosition);
+            this.CurrentLightModifiers = ComputeLightModifiersBasic(currentPosition);
             ApplyLightModifiers(this.CurrentLightModifiers);
         }
-        public void StartLightBlending(Vector2Int nextPosition)
-        {
-            //Debug.Log("Start Light Blending");
-            StopCoroutine("LightBlendingCouroutine");
-            this.NextLightModifiers = ComputeLightModifiers(nextPosition.Vector2);
-            //StartCoroutine(LightBlendingCouroutine(CharacterController.GetComponent<CharacterControllerScript>(),
-            //    nextPosition));
-            StartCoroutine("LightBlendingCouroutine", nextPosition);
-        }
-        IEnumerator LightBlendingCouroutine(Vector2Int nextPosition)
-        {
-            GameObject character = null;// needs some info about the player;
-            //float[,] templm = new float[MapManager.SizeX, MapManager.SizeY];
-            float[,] templm = new float[MapManager.SizeX, MapManager.SizeY];//this.CurrentLightModifiers.Clone() as float[,];
-            Vector3 np = nextPosition.Vector3(EVectorComponents.XZ);
-            float diff = (np - character.transform.position).magnitude;
-            while (diff > 0.02f)
-            {
-                //if (this.CurrentLightModifiers != null && this.NextLightModifiers != null)
-                {
-                    for (var x = 0; x < templm.GetLength(0); x++)
-                        for (var y = 0; y < templm.GetLength(1); y++)
-                        //templm.ForEach((coords, val) =>
-                        {
-                            var from = this.CurrentLightModifiers[x, y];
-                            var to = this.NextLightModifiers[x, y];
-                            var lerp = Mathf.Lerp(from, to, 1f - diff);
-                            //var lerp = Mathf.InverseLerp(from, to, 0.5f);
-                            templm[x, y] = lerp;
-                        };
-                    this.CurrentLightModifiers = templm;
-                    ApplyLightModifiers(templm);
-                }
-                diff = (np - character.transform.position).magnitude;
-                yield return null;
-            }
-            this.NextLightModifiers = null;
-        }
-        public float[,] ComputeLightModifiers(Vector2 light)
+        
+        //public void StartLightBlending(Vector2Int nextPosition)
+        //{
+        //    //Debug.Log("Start Light Blending");
+        //    StopCoroutine("LightBlendingCouroutine");
+        //    this.NextLightModifiers = ComputeLightModifiersBasic(nextPosition.Vector2);
+        //    //StartCoroutine(LightBlendingCouroutine(CharacterController.GetComponent<CharacterControllerScript>(),
+        //    //    nextPosition));
+        //    StartCoroutine("LightBlendingCouroutine", nextPosition);
+        //}
+        //IEnumerator LightBlendingCouroutine(Vector2Int nextPosition)
+        //{
+        //    GameObject character = null;// needs some info about the player;
+        //    //float[,] templm = new float[MapManager.SizeX, MapManager.SizeY];
+        //    float[,] templm = new float[MapManager.SizeX, MapManager.SizeY];//this.CurrentLightModifiers.Clone() as float[,];
+        //    Vector3 np = nextPosition.Vector3(EVectorComponents.XZ);
+        //    float diff = (np - character.transform.position).magnitude;
+        //    while (diff > 0.02f)
+        //    {
+        //        //if (this.CurrentLightModifiers != null && this.NextLightModifiers != null)
+        //        {
+        //            for (var x = 0; x < templm.GetLength(0); x++)
+        //                for (var y = 0; y < templm.GetLength(1); y++)
+        //                //templm.ForEach((coords, val) =>
+        //                {
+        //                    var from = this.CurrentLightModifiers[x, y];
+        //                    var to = this.NextLightModifiers[x, y];
+        //                    var lerp = Mathf.Lerp(from, to, 1f - diff);
+        //                    //var lerp = Mathf.InverseLerp(from, to, 0.5f);
+        //                    templm[x, y] = lerp;
+        //                };
+        //            this.CurrentLightModifiers = templm;
+        //            ApplyLightModifiers(templm);
+        //        }
+        //        diff = (np - character.transform.position).magnitude;
+        //        yield return null;
+        //    }
+        //    this.NextLightModifiers = null;
+        //}
+       
+        public float[,] ComputeLightModifiersWithShadows(Vector3 light)
         {
             float[,] result = new float[MapManager.SizeX, MapManager.SizeY];
             MapManager.ForEach((tile) =>
             {
-                var m = (light - tile.Coordinates.Vector2).magnitude;
+                var m = (light - tile.Coordinates.Vector3(EVectorComponents.XZ)).magnitude;
                 var lightModifier = 1f;
                 if (m < 12)
                 {
@@ -85,6 +93,18 @@ namespace Dungeon
                 //result[tile.Coordinates.x, tile.Coordinates.y] = lightModifier;
                 //var v = Mathf.Sqrt(m) / 12f * lightModifier;
                 var v = m / 36f * lightModifier;
+                result[tile.Coordinates.x, tile.Coordinates.y] = v;
+            });
+            return result;
+        }
+        public float[,] ComputeLightModifiersBasic(Vector3 light)
+        {
+            float[,] result = new float[MapManager.SizeX, MapManager.SizeY];
+            MapManager.ForEach((tile) =>
+            {
+                var m = (light - tile.Coordinates.Vector3(EVectorComponents.XZ)).magnitude;
+                var lightModifier = 1f;
+                var v = m / 9f * lightModifier;
                 result[tile.Coordinates.x, tile.Coordinates.y] = v;
             });
             return result;
@@ -163,41 +183,38 @@ namespace Dungeon
         }
         void ApplyLightModifiers(float[,] lightModifiers)
         {
-            if (this.Shadows)
+            MapManager.ForEach((tile) =>
             {
-                MapManager.ForEach((tile) =>
+                var lm = lightModifiers[tile.Coordinates.x, tile.Coordinates.y];
+                foreach (var go in tile.GridObjectReferences)
                 {
-                    var lm = lightModifiers[tile.Coordinates.x, tile.Coordinates.y];
-                    foreach (var go in tile.GridObjectReferences)
+                    if (go != null)
                     {
-                        if (go != null)
+                        var sprites = go.GameObject.GetComponentsInChildren<SpriteRenderer>();
+                        foreach (var sprite in sprites)
                         {
-                            var sprites = go.GameObject.GetComponentsInChildren<SpriteRenderer>();
-                            foreach (var sprite in sprites)
-                            {
 
-                                sprite.color = Color.Lerp(Color.white, Color.black, lm);
-                            }
+                            sprite.color = Color.Lerp(Color.white, Color.black, lm);
                         }
                     }
-                });
-
-                // apply to entities too
-                var entities = GameObject.FindGameObjectsWithTag("Entity");
-                foreach (var entity in entities)
-                {
-                    var coord = new Vector2Int(entity.transform.position, EVectorComponents.XZ);
-                    var lm = lightModifiers[coord.x, coord.y];
-                    var sprites = entity.GetComponentsInChildren<SpriteRenderer>();
-                    foreach (var sprite in sprites)
-                    {
-                        //lm = lm > 0.25f ? Mathf.Pow(lm, 1f / 3f) : lm;
-                        lm = Mathf.Pow(lm, 0.7f);
-                        sprite.color = Color.Lerp(Color.white, Color.black, lm);
-                        // hide entity
-                    }
-
                 }
+            });
+
+            // apply to entities too
+            var entities = GameObject.FindGameObjectsWithTag("Entity");
+            foreach (var entity in entities)
+            {
+                var coord = new Vector2Int(entity.transform.position, EVectorComponents.XZ);
+                var lm = lightModifiers[coord.x, coord.y];
+                var sprites = entity.GetComponentsInChildren<SpriteRenderer>();
+                foreach (var sprite in sprites)
+                {
+                    //lm = lm > 0.25f ? Mathf.Pow(lm, 1f / 3f) : lm;
+                    lm = Mathf.Pow(lm, 0.7f);
+                    sprite.color = Color.Lerp(Color.white, Color.black, lm);
+                    // hide entity
+                }
+
             }
         }
         #endregion

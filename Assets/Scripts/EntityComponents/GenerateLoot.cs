@@ -38,7 +38,6 @@ namespace Dungeon
             {
                 var typeIdx = UnityEngine.Random.Range(0, 2 + 1);
                 Entity entity = null;
-                typeIdx = 2;
                 if (typeIdx == 0)
                 {
                     int amount = Random.Range(this.MinGoldAmount, this.MaxGoldAmount + 1);

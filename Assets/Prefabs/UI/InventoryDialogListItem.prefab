@@ -362,6 +362,9 @@ MonoBehaviour:
   InventoryItem:
     ItemID: 0
     Amount: 0
+    IsEquiped: 0
+  NormalItemColor: {r: .686274529, g: .419607848, b: .13333334, a: .694117665}
+  EquipedItemColor: {r: 0, g: 0, b: 0, a: 0}
 --- !u!222 &22254996
 CanvasRenderer:
   m_ObjectHideFlags: 1
@@ -465,10 +468,10 @@ RectTransform:
   - {fileID: 22454996}
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 125.261856, y: -25}
+  m_SizeDelta: {x: 250.523712, y: 50}
   m_Pivot: {x: .5, y: .5}
 --- !u!224 &22470592
 RectTransform:

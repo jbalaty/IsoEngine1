@@ -65,7 +65,7 @@ namespace Dungeon.Items
             if (item.UnitAmount == 0f)
             {
                 // if item does not have unit amount, spawn one item the supplied amount
-                var e = SpawnWorldItemEntity(coords, item, amount);
+                var e = SpawnWorldItemEntity(coords, item, amount, true);
                 result.Add(e);
             }
             else
@@ -73,22 +73,37 @@ namespace Dungeon.Items
                 // if item have to be divided into units, spawn several units according to total amount
                 for (var i = 0; i < (int)(amount / item.UnitAmount); i++)
                 {
-                    var e = SpawnWorldItemEntity(coords, item, item.UnitAmount);
+                    var e = SpawnWorldItemEntity(coords, item, item.UnitAmount, true);
                     result.Add(e);
                 }
             }
             return result;
         }
 
-        Entity SpawnWorldItemEntity(Vector2Int coords, Item item, float amount)
+        Entity SpawnWorldItemEntity(Vector2Int coords, Item item, float amount, bool withRandomVariation)
         {
-            var randomVariation = Random.insideUnitSphere / 4f;
-            randomVariation.y = 0f;
-            randomVariation.x = Mathf.Abs(randomVariation.x);
-            randomVariation.z = Mathf.Abs(randomVariation.z);
 
-            var spawnPoint = coords.Vector3(EVectorComponents.XZ) + randomVariation;
+
+            var spawnPoint = coords.Vector3(EVectorComponents.XZ);
             var spawn = Instantiate(item.WorldObject, spawnPoint, Quaternion.identity) as Transform;
+            if (withRandomVariation)
+            {
+                var randomVariation = Random.insideUnitSphere / 2.5f;
+                randomVariation.y = 0f;
+                //randomVariation.x = Mathf.Abs(randomVariation.x);
+                //randomVariation.z = Mathf.Abs(randomVariation.z);
+
+                //var offsetNode = spawn.FindChild("Offset");
+                //if (offsetNode == null) offsetNode = spawn.FindChild("OffsetNode");
+                //if (offsetNode == null) offsetNode = spawn.FindChild("OffsetObject");
+                //offsetNode = offsetNode ?? spawn.transform;
+                //offsetNode.position += randomVariation;
+                var offsetNode = spawn.GetChild(0);
+                if (offsetNode != null)
+                {
+                    offsetNode.position += randomVariation;
+                }
+            }
             spawn.parent = EntitiesManager.Instance.transform;
             var pickable = spawn.GetComponent<Pickable>();
             pickable.Item = item;
