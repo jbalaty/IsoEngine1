@@ -55,6 +55,7 @@ namespace Dungeon
             {
                 if (!Movement.DoNextStep() && Entity.GetTilePosition(true) != GetTilePosition())
                 {
+                    Debug.Log("Movement not possible");
                     var path = Movement.SetTargetTile((action as EntityAction<Vector2Int>).Param0);
                     // if there is no path to this tile, stop and next plan choose other action
                     if (path == null || path.Count == 0)

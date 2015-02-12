@@ -128,7 +128,7 @@ namespace Dungeon
             {
                 if (!IsUIHit())
                 {
-                    Debug.Log("GameController - MouseButtonUp - " + Input.mousePosition);
+                    //Debug.Log("GameController - MouseButtonUp - " + Input.mousePosition);
                     var coords = GetTilePositionFromMouse(Input.mousePosition);
                     if (coords.HasValue && (Time.time - _timeOfLastClick) >= 0.5f)
                     {
@@ -243,14 +243,17 @@ namespace Dungeon
 
         void EntityTurnsUpdate()
         {
-            var player = Player.GetComponent<Player>();
-            var tdiff = Time.time - _TurnStartTime;
-            if (tdiff >= 0.5f && _TurnStartTime > 0f) // one turn is cca 0.5 second
+            if (Player.activeInHierarchy)
             {
-                var na = player.PlanNextAction();
-                if (na.Name == "MoveToPosition")
+                var player = Player.GetComponent<Player>();
+                var tdiff = Time.time - _TurnStartTime;
+                if (tdiff >= 0.5f && _TurnStartTime > 0f) // one turn is cca 0.5 second
                 {
-                    NextTurn();
+                    var na = player.PlanNextAction();
+                    if (na.Name == "MoveToPosition")
+                    {
+                        NextTurn();
+                    }
                 }
             }
         }

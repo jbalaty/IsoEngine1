@@ -126,9 +126,14 @@ namespace Dungeon
             if (CanAttack(go))
             {
                 // change direction to face the target
-                var dirvec = go.transform.position - this.transform.position;
-                var direction = Utils.GetDirectionFromVector(new Vector2Int(dirvec, EVectorComponents.XZ));
-                //this.GetComponent<Movement>().setd
+                var character = this.GetComponent<Character>();
+                if (character != null)
+                {
+                    var dirvec = go.transform.position - this.transform.position;
+                    var direction = Utils.GetDirectionFromVector(new Vector2Int(dirvec, EVectorComponents.XZ));
+                    character.SetDirection(direction.Value);
+                }
+
                 var enemy = go.GetComponent<Combat>();
                 DealDamage(enemy);
                 if (AttackSound != null) audio.PlayOneShot(AttackSound);

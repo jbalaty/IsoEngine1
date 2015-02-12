@@ -72,14 +72,14 @@ namespace Dungeon
                 }, 2);
                 if (coords.HasValue)
                 {
-                    Debug.Log(this.name + " chooses its destination point: " + coords.Value);
+                    //Debug.Log(this.name + " chooses its destination point: " + coords.Value);
                     Movement.SetTargetTile(coords.Value);
                     result = new EntityAction<Vector2Int>("MoveToPosition", coords.Value);
                 }
             }
             else
             {
-                Debug.Log(this.name + " is standing still");
+                //Debug.Log(this.name + " is standing still");
                 result = new EntityAction<Vector2Int>("StandingStill", Movement.GetTilePosition());
             }
             return result;
