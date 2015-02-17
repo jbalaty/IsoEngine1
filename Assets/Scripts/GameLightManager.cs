@@ -34,7 +34,7 @@ namespace Dungeon
             this.CurrentLightModifiers = ComputeLightModifiersBasic(currentPosition);
             ApplyLightModifiers(this.CurrentLightModifiers);
         }
-        
+
         //public void StartLightBlending(Vector2Int nextPosition)
         //{
         //    //Debug.Log("Start Light Blending");
@@ -73,7 +73,7 @@ namespace Dungeon
         //    }
         //    this.NextLightModifiers = null;
         //}
-       
+
         public float[,] ComputeLightModifiersWithShadows(Vector3 light)
         {
             float[,] result = new float[MapManager.SizeX, MapManager.SizeY];
@@ -209,10 +209,13 @@ namespace Dungeon
                 var sprites = entity.GetComponentsInChildren<SpriteRenderer>();
                 foreach (var sprite in sprites)
                 {
-                    //lm = lm > 0.25f ? Mathf.Pow(lm, 1f / 3f) : lm;
-                    lm = Mathf.Pow(lm, 0.7f);
-                    sprite.color = Color.Lerp(Color.white, Color.black, lm);
-                    // hide entity
+                    if (sprite.name.ToLower() != "healthbar")
+                    {
+                        //lm = lm > 0.25f ? Mathf.Pow(lm, 1f / 3f) : lm;
+                        lm = Mathf.Pow(lm, 0.7f);
+                        sprite.color = Color.Lerp(Color.white, Color.black, lm);
+                        // hide entity
+                    }
                 }
 
             }

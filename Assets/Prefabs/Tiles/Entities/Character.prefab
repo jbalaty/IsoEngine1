@@ -26,12 +26,12 @@ GameObject:
   m_Component:
   - 4: {fileID: 495614}
   - 114: {fileID: 11495628}
-  - 82: {fileID: 8285260}
   - 114: {fileID: 11485256}
   - 114: {fileID: 11485258}
   - 114: {fileID: 11485260}
   - 114: {fileID: 11404850}
-  - 114: {fileID: 11419420}
+  - 114: {fileID: 11404626}
+  - 114: {fileID: 11427608}
   m_Layer: 0
   m_Name: Character
   m_TagString: Player
@@ -157,7 +157,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 195614}
   m_LocalRotation: {x: .5, y: 0, z: 0, w: .866025388}
-  m_LocalPosition: {x: 7, y: 0, z: 7}
+  m_LocalPosition: {x: 9, y: 0, z: 38}
   m_LocalScale: {x: 2.5, y: 2.5, z: 1}
   m_Children:
   - {fileID: 495622}
@@ -241,64 +241,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 495622}
   m_RootOrder: 5
---- !u!82 &8285260
-AudioSource:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 195614}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_audioClip: {fileID: 0}
-  m_PlayOnAwake: 0
-  m_Volume: 1
-  m_Pitch: 1
-  Loop: 0
-  Mute: 0
-  Priority: 128
-  DopplerLevel: 1
-  MinDistance: 2.84915066
-  MaxDistance: 500
-  Pan2D: 0
-  rolloffMode: 0
-  BypassEffects: 0
-  BypassListenerEffects: 0
-  BypassReverbZones: 0
-  rolloffCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-    - time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-  panLevelCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-  spreadCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
 --- !u!95 &9595618
 Animator:
   serializedVersion: 3
@@ -409,6 +351,17 @@ Light:
   m_ShadowAngle: 0
   m_IndirectIntensity: 1
   m_AreaSize: {x: 1, y: 1}
+--- !u!114 &11404626
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 195614}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72c6370f16eb7a142b009b7ce29dadf7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &11404850
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -421,7 +374,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   DelayBetweenSpawns: .100000001
---- !u!114 &11419420
+--- !u!114 &11427608
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -429,10 +382,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 195614}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f483ed6da87911f4cbec44a4e4a55a42, type: 3}
+  m_Script: {fileID: 11500000, guid: 30e611acc28115d42b7735e574d16f6b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DelayBetweenSpawns: .100000001
 --- !u!114 &11485256
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -444,17 +396,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59be3dc133875b84cb556fabe2ad68d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MaxHitPoints: 12
+  MaxHitPoints: 20
   CurrentHitPoints: 0
-  DefenceValue: 1
-  AttackValue: 2
+  DefenceValue: 2
+  AttackValueFixed: 2
+  AttackValueDiced: 1
+  ExperiencePoints: 0
   OnDeadDestroy: 0
   OnDeadSetWalkable: 1
   LastAttacker: {fileID: 0}
-  RegenerationSpeed: 0
+  RegenerationSpeed: .100000001
   DeathSound: {fileID: 8300000, guid: 05d5bee1f7fd39f4d9014ac9a2dc77ff, type: 3}
   HitSound: {fileID: 0}
   AttackSound: {fileID: 8300000, guid: 577d0ba4b5fc35541a1cd830ca74d01f, type: 3}
+  LevelUpSound: {fileID: 8300000, guid: 74056d09db990154f894057d8ff7d587, type: 3}
+  HealthIndicator: {fileID: 0}
 --- !u!114 &11485258
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -467,6 +423,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   PickItems: 1
+  InventoryDialog: {fileID: 0}
   Items: []
 --- !u!114 &11485260
 MonoBehaviour:
@@ -479,6 +436,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 874fbbf46ddb3324e8dcc9686a8acc16, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Name: Jouda
   EntitiesManager: {fileID: 0}
   CurrentAction:
     Name: NoAction

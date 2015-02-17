@@ -25,6 +25,18 @@ public class Utils
         if (callback != null) callback();
     }
 
+    public static IEnumerator WaitEndOfFrame(Action callback)
+    {
+        yield return new WaitForEndOfFrame();
+        if (callback != null) callback();
+    }
+
+    public static IEnumerator WaitForFixedUpdate(Action callback)
+    {
+        yield return new WaitForFixedUpdate();
+        if (callback != null) callback();
+    }
+
     public static void PlayClip(AudioClip aclip, Action callback = null)
     {
         var waitSecs = 0f;

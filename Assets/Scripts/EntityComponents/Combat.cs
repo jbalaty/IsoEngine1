@@ -5,15 +5,15 @@ using System;
 
 namespace Dungeon
 {
-    [RequireComponent(typeof(AudioSource))]
     public class Combat : MonoBehaviour
     {
 
         public int MaxHitPoints = 10;
         public float CurrentHitPoints = 0;
         public float DefenceValue = 1;
-        public float AttackValue = 1;
-        public long ExperiencePoints = 0;
+        public float AttackValueFixed = 1;
+        public float AttackValueDiced = 0;
+        public int ExperiencePoints = 0;
         public bool OnDeadDestroy = true;
         public bool OnDeadSetWalkable = true;
         public Entity LastAttacker = null;
@@ -24,6 +24,7 @@ namespace Dungeon
         public AudioClip DeathSound;
         public AudioClip HitSound;
         public AudioClip AttackSound;
+        public AudioClip LevelUpSound;
 
 
         public event Action<Vector3> EntityDead;
@@ -72,12 +73,12 @@ namespace Dungeon
                 {
                     TextMeshSpawner.SpawnTextMesh("- " + realDamageWithoutDefence + "HP", Color.red, 1f);
                 }
-                Debug.Log(this.name + ": taking damage " + damage + "-" + DefenceValue + "=" + realDamageWithoutDefence
-                    + " (Life: " + CurrentHitPoints + "/" + MaxHitPoints + ")");
+                //Debug.Log(this.name + ": taking damage " + damage + "-" + DefenceValue + "=" + realDamageWithoutDefence
+                //+ " (Life: " + CurrentHitPoints + "/" + MaxHitPoints + ")");
                 if (this.CurrentHitPoints > 0)
                 {
                     StartCoroutine(ChangeColorCoroutine(Color.red));
-                    if (HitSound != null) audio.PlayOneShot(HitSound);
+                    Utils.PlayClip(HitSound);
                 }
                 else
                 {
@@ -136,7 +137,7 @@ namespace Dungeon
 
                 var enemy = go.GetComponent<Combat>();
                 DealDamage(enemy);
-                if (AttackSound != null) audio.PlayOneShot(AttackSound);
+                Utils.PlayClip(AttackSound);
                 result = true;
             }
             return result;
@@ -144,17 +145,36 @@ namespace Dungeon
 
         public int DealDamage(Combat enemy)
         {
-            var attackValue = this.AttackValue;
+            var attackValue = this.AttackValueFixed;
+            var weaponAttacValue = 0f;
             if (ActiveWeapon != null)
             {
                 var attackeffect = ActiveWeapon.Effects.Find((e) => e.AttributeName.ToLower() == "attack");
-                attackValue += attackeffect.Value;
+                weaponAttacValue = UnityEngine.Random.Range(1, (int)attackeffect.Value + 1);
+                //weaponAttacValue += attackeffect.Value;
             }
-            int realDamageDealt = enemy.TakeDamage(attackValue, this);
+            else
+            {
+                weaponAttacValue = UnityEngine.Random.Range(0, (int)this.AttackValueDiced + 1);
+            }
+            Debug.Log(this.name + " Attack: " + attackValue + "+" + weaponAttacValue + " (" + (attackValue + weaponAttacValue) + ")");
+            int realDamageDealt = enemy.TakeDamage(attackValue + weaponAttacValue, this);
             if (!enemy.IsAlive)
             {
-                TextMeshSpawner.SpawnTextMesh("+ " + enemy.MaxHitPoints + "XP", Color.cyan, 1f);
                 ExperiencePoints += enemy.MaxHitPoints;
+                if (ExperiencePoints >= 40)
+                {
+                    TextMeshSpawner.SpawnTextMesh("LEVEL UP", Color.cyan, 1f);
+                    MaxHitPoints += 5;
+                    CurrentHitPoints = MaxHitPoints;
+                    ExperiencePoints -= 40;
+                    AttackValueFixed += 1;
+                    Utils.PlayClip(LevelUpSound);
+                }
+                else
+                {
+                    TextMeshSpawner.SpawnTextMesh("+ " + enemy.MaxHitPoints + "XP", Color.cyan, 1f);
+                }
             }
             return realDamageDealt;
         }
@@ -178,20 +198,23 @@ namespace Dungeon
             }
         }
 
-        public void EntityTurnStart(EntityAction current)
+        public void EntityTurnStart(EntityAction currentAction)
         {
-            // use auto healing
-            _currentRegenerationProgress += RegenerationSpeed * 1f; //1 turn
-            if (_currentRegenerationProgress > 1f)
+            if (currentAction.Name != "AttackEntity" && RegenerationSpeed > 0f)
             {
-                int chp = (int)CurrentHitPoints;
-                CurrentHitPoints += (int)_currentRegenerationProgress;
-                CurrentHitPoints = Mathf.Min(CurrentHitPoints, MaxHitPoints);
-                if ((int)CurrentHitPoints - chp > 0)
+                // use auto healing
+                _currentRegenerationProgress += RegenerationSpeed * 1f; //1 turn
+                if (_currentRegenerationProgress > 1f)
                 {
-                    TextMeshSpawner.SpawnTextMesh("+ " + ((int)CurrentHitPoints - chp) + "HP", Color.green, TextMeshSpawner.DefaultFadeOutTime);
+                    int chp = (int)CurrentHitPoints;
+                    CurrentHitPoints += (int)_currentRegenerationProgress;
+                    CurrentHitPoints = Mathf.Min(CurrentHitPoints, MaxHitPoints);
+                    if ((int)CurrentHitPoints - chp > 0)
+                    {
+                        TextMeshSpawner.SpawnTextMesh("+ " + ((int)CurrentHitPoints - chp) + "HP", Color.green, TextMeshSpawner.DefaultFadeOutTime);
+                    }
+                    _currentRegenerationProgress -= (int)_currentRegenerationProgress;
                 }
-                _currentRegenerationProgress -= (int)_currentRegenerationProgress;
             }
         }
 

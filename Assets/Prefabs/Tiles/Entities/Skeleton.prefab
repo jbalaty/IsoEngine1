@@ -42,10 +42,10 @@ GameObject:
   - 4: {fileID: 488762}
   - 114: {fileID: 11488760}
   - 114: {fileID: 11488758}
-  - 82: {fileID: 8216450}
   - 114: {fileID: 11416452}
   - 114: {fileID: 11416450}
   - 114: {fileID: 11444472}
+  - 114: {fileID: 11438756}
   m_Layer: 0
   m_Name: Skeleton
   m_TagString: Entity
@@ -91,64 +91,6 @@ Transform:
   - {fileID: 488758}
   m_Father: {fileID: 0}
   m_RootOrder: 0
---- !u!82 &8216450
-AudioSource:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 188762}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_audioClip: {fileID: 0}
-  m_PlayOnAwake: 0
-  m_Volume: 1
-  m_Pitch: 1
-  Loop: 0
-  Mute: 0
-  Priority: 128
-  DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 500
-  Pan2D: 0
-  rolloffMode: 0
-  BypassEffects: 0
-  BypassListenerEffects: 0
-  BypassReverbZones: 0
-  rolloffCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-    - time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-  panLevelCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-  spreadCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
 --- !u!95 &9588758
 Animator:
   serializedVersion: 3
@@ -181,7 +123,6 @@ MonoBehaviour:
   MinGoldAmount: 0
   UseHitPointsForGoldRange: 1
   LootProbability: .507000029
-  GoldLootSound: {fileID: 8300000, guid: ec9253e4c5bcede4d89b6225b4c1cca5, type: 3}
 --- !u!114 &11416452
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -193,16 +134,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59be3dc133875b84cb556fabe2ad68d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MaxHitPoints: 5
+  MaxHitPoints: 9
   CurrentHitPoints: 0
-  DefenceValue: 1
-  AttackValue: 2
+  DefenceValue: 2
+  AttackValueFixed: 2
+  AttackValueDiced: 2
+  ExperiencePoints: 0
   OnDeadDestroy: 0
   OnDeadSetWalkable: 1
   LastAttacker: {fileID: 0}
+  RegenerationSpeed: 0
   DeathSound: {fileID: 8300000, guid: 7a2633aa133f9234b86956906b0bde77, type: 3}
   HitSound: {fileID: 8300000, guid: 11ceb55512d961b468731413373ec85f, type: 3}
   AttackSound: {fileID: 0}
+  LevelUpSound: {fileID: 0}
+  HealthIndicator: {fileID: 0}
+--- !u!114 &11438756
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 188762}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d383857fa361b8548b421e7f2975f1ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  HealthBarPrefab: {fileID: 463608, guid: 0db0dfa6945ded34bb2f97905f8634e9, type: 2}
 --- !u!114 &11444472
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -214,7 +172,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f483ed6da87911f4cbec44a4e4a55a42, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  FadeOutTime: 1
   DelayBetweenSpawns: .100000001
 --- !u!114 &11488758
 MonoBehaviour:
@@ -227,6 +184,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 633023957cf6d6742905861f6f68a855, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Name: 
   EntitiesManager: {fileID: 0}
   CurrentAction:
     Name: NoAction
@@ -237,9 +195,9 @@ MonoBehaviour:
   TextMeshSpawner: {fileID: 0}
   MapLayer: 4
   IsWalkable: 0
-  Entity: {fileID: 0}
   Combat: {fileID: 0}
-  WalkStandRatio: .500999987
+  Entity: {fileID: 0}
+  WalkStandRatio: .0769999996
 --- !u!114 &11488760
 MonoBehaviour:
   m_ObjectHideFlags: 1

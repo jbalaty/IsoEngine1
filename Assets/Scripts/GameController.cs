@@ -18,6 +18,16 @@ namespace Dungeon
     public struct Dialogs
     {
         public GameObject ObjectsInventoryDialog;
+        public GameObject GameMenu;
+        public GameObject HelpPanel;
+        public CharacterDialog CharacterDialog;
+    }
+
+    [System.Serializable]
+    public class GameSettings
+    {
+        public bool AutoWalk = true;
+        public bool AutoCombat = true;
     }
 
     //[ExecuteInEditMode()]
@@ -41,9 +51,10 @@ namespace Dungeon
         public GameObject MapObject;
         public GameObject Player;
         public Dialogs Dialogs;
-        public GameObject HelpPanel;
         [HideInInspector]
         public GameLightManager LightManager;
+        public Texture2D CursorCombat;
+        GameSettings GameSettings = new GameSettings();
 
         #region input handling vars
         /*GridObject LastMouseUpMapObject;
@@ -69,6 +80,10 @@ namespace Dungeon
             LightManager.MapManager = MapManager;
             LightManager.GameController = this;
 
+#if UNITY_IPHONE || UNITY_ANDROID
+            //GameSettings.AutoCombat = true;
+            Camera.main.orthographicSize -= 2;
+#endif
         }
         // Use this for initialization
         void Start()
@@ -99,12 +114,92 @@ namespace Dungeon
             Player.GetComponent<Combat>().EntityDead += (v) =>
             {
                 StartCoroutine(FreeplayCoroutine());
+                Dialogs.GameMenu.SetActive(true);
             };
 
-            HelpPanel = GameObject.Find("HelpPanel");
+            var messages = new List<DialogMessage>();
+            messages.Add(new DialogMessage
+            {
+                SpeakerName = "Village guards",
+                Color = Color.red,
+                Message = "You get in there, now!!"
+            });
+            messages.Add(new DialogMessage
+            {
+                SpeakerName = "You",
+                Color = Color.green,
+                Message = "No I can't, you just don't understand. I am no witch hunter. My master was.",
+            });
+            messages.Add(new DialogMessage
+            {
+                SpeakerName = "Village guards",
+                Color = Color.red,
+                Message = @"Hmm, that's interesting. "
+    + "But you know what? I don't give a shit. Your master just fled out of here, legs on "
+    + "his shoulders and his face pale as milk. The tomb is your concern now."
+            });
+            messages.Add(new DialogMessage
+            {
+                SpeakerName = "Village guards",
+                Color = Color.red,
+                Message = "And now get in there or I swear I will put my spear "
+    + "through your chest and feed the monsters with your bones! I will not stay here "
+    + "and chat while the monsters may be creeping here right now."
+            });
+            messages.Add(new DialogMessage
+            {
+                SpeakerName = "You",
+                Color = Color.green,
+                Message = "Ok ok, I'm going...",
+            });
+            messages.Add(new DialogMessage
+            {
+                SpeakerName = "Village guards",
+                Color = Color.red,
+                Message = "And one last thing. In case you find some gold don't forget that all belongs to our mayor!"
+            });
+            messages.Add(new DialogMessage
+            {
+                SpeakerName = "You",
+                Color = Color.green,
+                Message = "Yes I risk my life and maybe my soul to make your fat mayor even fatter!"
+            });
+            Dialogs.CharacterDialog.PlayDialogMessages(messages);
+
+
             StartCoroutine(Utils.WaitForSeconds(5f, () =>
             {
-                this.HelpPanel.SetActive(false);
+                Dialogs.HelpPanel.SetActive(false);
+            }));
+
+            StartCoroutine(Utils.WaitForSeconds(3f, () =>
+            {
+                var msgs = new List<DialogMessage>();
+                msgs.Add(new DialogMessage
+                {
+                    SpeakerName = "You",
+                    Color = Color.green,
+                    Message = "Marvellous! "
+                });
+                msgs.Add(new DialogMessage
+                {
+                    SpeakerName = "You",
+                    Color = Color.green,
+                    Message = "My master is gone and I am trapped in this tomb with horde of monsters, no weapons and only two flasks of healing."
+                });
+                msgs.Add(new DialogMessage
+                {
+                    SpeakerName = "You",
+                    Color = Color.green,
+                    Message = "Maybe I should join the monsters, go out and tear the villagers to pieces."
+                });
+                msgs.Add(new DialogMessage
+                {
+                    SpeakerName = "You",
+                    Color = Color.green,
+                    Message = "Oh gods, this is not fair."
+                });
+                Dialogs.CharacterDialog.PlayDialogMessages(msgs);
             }));
         }
 
@@ -124,12 +219,40 @@ namespace Dungeon
 
             // MOUSE HANDLING
             // MOUSE BUTTON UP
+            bool isEnemy = false;
+            var coords = GetTilePositionFromMouse(Input.mousePosition);
+            if (coords.HasValue)
+            {
+                var entities = EntitiesManager.GetEntitiesOnPosition(coords.Value);
+                if (entities.Count > 0 && !IsUIHit())
+                {
+                    foreach (var e in entities)
+                    {
+                        if (e != Player.GetComponent<Entity>() && e.GetComponent<Combat>() != null
+                            && e.GetComponent<Combat>().IsAlive)
+                        {
+                            isEnemy = true;
+                            break;
+                        }
+                    }
+
+                }
+            }
+#if !UNITY_IPHONE && !UNITY_ANDROID
+            if (isEnemy)
+            {
+                Cursor.SetCursor(CursorCombat, new Vector2(0, 0), CursorMode.Auto);
+            }
+            else
+            {
+                Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+            }
+#endif
             if (Input.GetMouseButtonUp(0))
             {
                 if (!IsUIHit())
                 {
                     //Debug.Log("GameController - MouseButtonUp - " + Input.mousePosition);
-                    var coords = GetTilePositionFromMouse(Input.mousePosition);
                     if (coords.HasValue && (Time.time - _timeOfLastClick) >= 0.5f)
                     {
                         var entities = EntitiesManager.GetEntitiesOnPosition(coords.Value);
@@ -158,6 +281,7 @@ namespace Dungeon
                         if (!someAction && MapManager.IsTileWalkable(coords.Value
                             , new PathFinderInfo(EntitiesManager.AllEntities)))
                         {
+                            Debug.Log("Player - MoveTo - " + Time.timeSinceLevelLoad);
                             Player.GetComponent<Player>().MoveTo(coords.Value);
                             HighlightTile(coords.Value);
                             endTurn = true;
@@ -178,9 +302,8 @@ namespace Dungeon
             }
             else if (Input.GetKeyDown(KeyCode.H))
             {
-                HelpPanel.SetActive(!HelpPanel.activeSelf);
+                Dialogs.HelpPanel.SetActive(!Dialogs.HelpPanel.activeSelf);
             }
-
             EntityTurnsUpdate();
         }
 
@@ -209,7 +332,27 @@ namespace Dungeon
             //EventSystem.current.RaycastAll(pe, hits);
             ////if (hits.Count > 0) Debug.Log("UI Hit!!!");
             //return hits.Count > 0;
-            return EventSystem.current.IsPointerOverGameObject();
+
+
+            var result = false;
+            if (Input.touchCount > 0)
+            {
+                // if any of the fingers is over UI return true
+                for (var i = 0; i < Input.touchCount; i++)
+                {
+                    var fingerId = Input.GetTouch(i).fingerId;
+                    if (EventSystem.current.IsPointerOverGameObject(fingerId))
+                    {
+                        result = true;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                result = EventSystem.current.IsPointerOverGameObject(); // mouse
+            }
+            return result || EventSystem.current.currentSelectedGameObject != null;
         }
 
         public void HighlightTile(Vector2Int coords)
@@ -227,7 +370,7 @@ namespace Dungeon
         public void NextTurn()
         {
             var tdiff = Time.time - _TurnStartTime;
-            if (tdiff >= 0.5f) // dont start next turn, if some is in progress
+            if (tdiff >= 0.51f) // dont start next turn, if some is in progress
             {
                 _TurnStartTime = Time.time;
                 EntitiesManager.PlanAllEntitiesAction();
@@ -243,14 +386,21 @@ namespace Dungeon
 
         void EntityTurnsUpdate()
         {
-            if (Player.activeInHierarchy)
+            if (Player.activeInHierarchy && Player.GetComponent<Combat>().IsAlive)
             {
                 var player = Player.GetComponent<Player>();
                 var tdiff = Time.time - _TurnStartTime;
-                if (tdiff >= 0.5f && _TurnStartTime > 0f) // one turn is cca 0.5 second
+                if (tdiff >= 0.51f && tdiff <= 1.1f && _TurnStartTime > 0f) // one turn is cca 0.5 second
                 {
                     var na = player.PlanNextAction();
-                    if (na.Name == "MoveToPosition")
+                    var pcombat = player.GetComponent<Combat>();
+                    if (na.Name == "MoveToPosition" && GameSettings.AutoWalk)
+                    {
+                        //Debug.Log("Auto turn - " + Time.timeSinceLevelLoad);
+                        NextTurn();
+                    }
+                    if (na.Name == "AttackEntity" && GameSettings.AutoCombat
+                        && pcombat.CurrentHitPoints >= 0.3f * pcombat.MaxHitPoints)
                     {
                         NextTurn();
                     }
@@ -262,9 +412,8 @@ namespace Dungeon
         {
             while (true)
             {
-                Debug.Log("Freeplay - next turn");
                 NextTurn();
-                yield return new WaitForSeconds(1.0f);
+                yield return new WaitForSeconds(0.51f);
             }
         }
 
@@ -290,6 +439,18 @@ namespace Dungeon
             });
         }
         #endregion
+
+
+
+        public void NewGame()
+        {
+            Application.LoadLevel("Level0");
+        }
+
+        public void QuitGame()
+        {
+            Application.Quit();
+        }
     }
 
 }

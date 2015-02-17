@@ -5,7 +5,6 @@ using IsoEngine1;
 namespace Dungeon
 {
     [RequireComponent(typeof(Movement))]
-    [RequireComponent(typeof(AudioSource))]
     public class Player : Character
     {
         EntityAction UserAction;
@@ -23,6 +22,7 @@ namespace Dungeon
             if (inv != null)
             {
                 inv.AddItem(Items.ItemsDatabase.Instance.FindByName("Gold"), 5f);
+                inv.AddItem(Items.ItemsDatabase.Instance.FindByName("Minor healing potion"), 2f);
             }
         }
 
@@ -38,6 +38,14 @@ namespace Dungeon
             {
                 result = CurrentAction;
             }
+            else if (currentAction.Name == "AttackEntity")
+            {
+                var entityaction = (currentAction as EntityAction<Entity>);
+                if (entityaction.Param0 != null && entityaction.Param0.GetComponent<Combat>().IsAlive)
+                {
+                    result = currentAction;
+                }
+            }
             else
             {
                 //Debug.Log(this.name + " is standing still");
@@ -45,6 +53,7 @@ namespace Dungeon
                 result = NoAction;
             }
             UserAction = null;
+            //Debug.Log("Player action - " + result.Name + " " + Time.timeSinceLevelLoad);
             return result;
         }
 
@@ -53,9 +62,11 @@ namespace Dungeon
             base.DoProcessNextAction(action);
             if (action.Name == "MoveToPosition")
             {
-                if (!Movement.DoNextStep() && Entity.GetTilePosition(true) != GetTilePosition())
+                var doNextStep = !Movement.DoNextStep();
+                if (doNextStep && Entity.GetTilePosition(true) != GetTilePosition())
                 {
                     Debug.Log("Movement not possible");
+                    Debug.Log("DoNextStep: " + doNextStep + " TPOS-TRUE" + Entity.GetTilePosition(true) + " TPOS-FALSE:" + GetTilePosition());
                     var path = Movement.SetTargetTile((action as EntityAction<Vector2Int>).Param0);
                     // if there is no path to this tile, stop and next plan choose other action
                     if (path == null || path.Count == 0)
@@ -66,8 +77,11 @@ namespace Dungeon
             }
             else if (action.Name == "AttackEntity")
             {
-                var enemy = (action as EntityAction<Entity>).Param0.GetComponent<Combat>();
-                this.Combat.Attack(enemy);
+                if ((action as EntityAction<Entity>).Param0 != null)
+                {
+                    var enemy = (action as EntityAction<Entity>).Param0.GetComponent<Combat>();
+                    this.Combat.Attack(enemy);
+                }
             }
         }
         public void MoveTo(Vector2Int coords)

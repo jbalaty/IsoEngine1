@@ -5,7 +5,6 @@ using IsoEngine1;
 namespace Dungeon
 {
     [RequireComponent(typeof(Movement))]
-    [RequireComponent(typeof(AudioSource))]
     public class Character : Entity
     {
         protected Animator[] AnimControllers;

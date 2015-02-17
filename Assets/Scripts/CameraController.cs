@@ -25,13 +25,14 @@ public class CameraController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        var uihit = EventSystem.current.IsPointerOverGameObject();
         // ZOOMING
-        if (Input.GetAxis("Mouse ScrollWheel") > 0)
+        if (Input.GetAxis("Mouse ScrollWheel") > 0 && !uihit)
         { // forward
             Camera.main.orthographicSize = Mathf.Max(MinZoom, Camera.main.orthographicSize - 0.25f);
 
         }
-        if (Input.GetAxis("Mouse ScrollWheel") < 0)
+        if (Input.GetAxis("Mouse ScrollWheel") < 0 && !uihit)
         { // back
             Camera.main.orthographicSize = Mathf.Min(MaxZoom, Camera.main.orthographicSize + 0.25f);
         }

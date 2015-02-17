@@ -26,8 +26,9 @@ namespace Dungeon
                 Value = 1;
                 if (Inventory != null)
                 {
-                    Inventory.ToggleInventoryDialog( e.GetComponent<Inventory>());
+                    Inventory.ToggleInventoryDialog(e.GetComponent<Inventory>());
                 }
+                SendMessage("ChestOpened", SendMessageOptions.DontRequireReceiver);
             }
             else
             {

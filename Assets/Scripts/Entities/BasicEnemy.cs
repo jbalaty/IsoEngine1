@@ -9,6 +9,8 @@ namespace Dungeon
     public class BasicEnemy : Character
     {
         protected GameController GameController;
+        //int _NumberFollowAttackerSteps;
+
         [Range(0, 1)]
         public float WalkStandRatio = 0.7f;
 
@@ -29,16 +31,18 @@ namespace Dungeon
         }
 
         #region Entities
-        protected override Dungeon.EntityAction DoPlanNextAction(Dungeon.EntityAction currentAction)
+        protected override EntityAction DoPlanNextAction(Dungeon.EntityAction currentAction)
         {
+            //if (_NumberFollowAttackerSteps <= -10) _NumberFollowAttackerSteps = 0;
             var result = base.DoPlanNextAction(currentAction);
             var playersClose = EntitiesManager.GetEntities((e) =>
             {
-                return e.GetComponent<Player>() != null && Utils.DiagonalDistance(this.GetTilePosition(), e.GetTilePosition()) <= 2;
+                return e.GetComponent<Player>() != null && Utils.DiagonalDistance(this.GetTilePosition(), e.GetTilePosition()) <= 3;
             });
             if (playersClose.Count > 0)
             {
                 Combat.LastAttacker = playersClose[0];
+                SendMessage("EnemySpotted", SendMessageOptions.DontRequireReceiver);
             }
 
             if (Combat.LastAttacker != null && Combat.LastAttacker.GetComponent<Combat>().IsAlive)
@@ -46,8 +50,9 @@ namespace Dungeon
                 if (Combat.IsInSquareRange(Combat.LastAttacker.GetTilePosition(), this.GetTilePosition(), 1))
                 {
                     result = new EntityAction<Entity>("AttackEntity", Combat.LastAttacker);
+                    //_NumberFollowAttackerSteps = 0;
                 }
-                else
+                else //if (_NumberFollowAttackerSteps >= 0 && _NumberFollowAttackerSteps < 10)
                 {
                     // follow the attacker
                     var pp = Combat.LastAttacker.GetTilePosition(true);
@@ -56,7 +61,15 @@ namespace Dungeon
                         return e != this.Entity && e != Combat.LastAttacker;
                     }));
                     result = new EntityAction<Vector2Int>("MoveToPosition", pp);
+                    //_NumberFollowAttackerSteps++;
                 }
+                //else
+                //{
+                //    result = PlanRandomPath();
+                //    Combat.LastAttacker = null;
+                //    if (_NumberFollowAttackerSteps >= 10) _NumberFollowAttackerSteps = -1;
+                //    else _NumberFollowAttackerSteps--;
+                //}
             }
             else if (currentAction.Name == "MoveToPosition" && Movement.CurrentPath != null && Movement.CurrentPath.Count > 0)
             {
@@ -65,22 +78,29 @@ namespace Dungeon
             else if ((UnityEngine.Random.value < WalkStandRatio)
                 || (Combat.CurrentHitPoints <= Combat.MaxHitPoints * 0.2f))
             {
-                // plan path
-                var coords = MapProxy.GetRandomMovementTile(Entity.StartPosition, (c) =>
-                {
-                    return c != Entity.StartPosition && c != this.GetTilePosition();
-                }, 2);
-                if (coords.HasValue)
-                {
-                    //Debug.Log(this.name + " chooses its destination point: " + coords.Value);
-                    Movement.SetTargetTile(coords.Value);
-                    result = new EntityAction<Vector2Int>("MoveToPosition", coords.Value);
-                }
+                result = PlanRandomPath();
             }
             else
             {
                 //Debug.Log(this.name + " is standing still");
                 result = new EntityAction<Vector2Int>("StandingStill", Movement.GetTilePosition());
+            }
+            return result;
+        }
+
+        EntityAction PlanRandomPath()
+        {
+            var result = NoAction;
+            // plan path
+            var coords = MapProxy.GetRandomMovementTile(Entity.StartPosition, (c) =>
+            {
+                return c != Entity.StartPosition && c != this.GetTilePosition();
+            }, 2);
+            if (coords.HasValue)
+            {
+                //Debug.Log(this.name + " chooses its destination point: " + coords.Value);
+                Movement.SetTargetTile(coords.Value);
+                result = new EntityAction<Vector2Int>("MoveToPosition", coords.Value);
             }
             return result;
         }

@@ -121,8 +121,10 @@ namespace Dungeon
                 }
                 else
                 {
-                    Items.Add(new InventoryItem(item, amount));
+                    ii = new InventoryItem(item, amount);
+                    Items.Add(ii);
                 }
+                SendMessage("ItemAddedToInventory", ii, SendMessageOptions.DontRequireReceiver);
             }
             else if (amount < 0f)
             {

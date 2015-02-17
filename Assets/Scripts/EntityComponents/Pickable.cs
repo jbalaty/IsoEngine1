@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 using IsoEngine1;
 using Dungeon.Items;
 
@@ -31,7 +31,7 @@ namespace Dungeon
             {
                 //Debug.Log("Picking " + this. Gold + " gold");
                 //entity.GetComponent<Inventory>().AddGold(this.Gold);
-                inventory.AddItem(this.Item, this.Amount);
+                var ii = inventory.AddItem(this.Item, this.Amount);
                 if (this.Item.Type == EItemType.Money)
                 {
                     var tm = entity.GetComponent<TextMeshSpawner>();
@@ -42,6 +42,7 @@ namespace Dungeon
                 }
                 Utils.PlayClip(Item.PickupSound ?? PickupSound);
                 Destroy(this.gameObject);
+                entity.gameObject.SendMessage("ItemPickedUp", this.Item, SendMessageOptions.DontRequireReceiver);
             }
         }
 
